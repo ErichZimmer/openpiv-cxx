@@ -21,13 +21,15 @@ namespace py = pybind11;
 void add_grid(py::module& m)
 {
     m.def("generate_cartesian_grid_with_relative_offset",
-          static_cast<std::vector<rect>(*)(const size&, const core::size&, double)>(&generate_cartesian_grid),
+          static_cast<std::vector<rect>(*)(const size&, const core::size&, double, bool)>(&generate_cartesian_grid),
           "image_size"_a,
           "interrogation_size"_a,
-          "percentage_offset"_a);
+          "percentage_offset"_a,
+          "centered"_a);
     m.def("generate_cartesian_grid_with_fixed_offset",
-          static_cast<std::vector<rect>(*)(const size&, const core::size&, std::array< uint32_t, 2 >)>(&generate_cartesian_grid),
+          static_cast<std::vector<rect>(*)(const size&, const core::size&, std::array< uint32_t, 2 >, bool)>(&generate_cartesian_grid),
           "image_size"_a,
           "interrogation_size"_a,
-          "offsets"_a);
+          "offsets"_a,
+          "centered"_a);
 }

@@ -53,7 +53,8 @@ namespace openpiv::core {
     std::vector<core::rect>
     generate_cartesian_grid( const core::size& image_size,
                              const core::size& interrogation_size,
-                             double percentage_offset )
+                             double percentage_offset,
+                             bool centered )
     {
         if ( percentage_offset < 0.0 || percentage_offset > 1.0 )
             core::exception_builder<std::runtime_error>() << "offsets must be between 0.0 and 1.0";
@@ -62,13 +63,15 @@ namespace openpiv::core {
             image_size,
             interrogation_size,
             { (uint32_t)(interrogation_size.width()  * percentage_offset),
-              (uint32_t)(interrogation_size.height() * percentage_offset) } );
+              (uint32_t)(interrogation_size.height() * percentage_offset) },
+            centered );
     }
 
     std::vector<core::rect>
     generate_cartesian_grid( const core::size& image_size,
                              const core::size& interrogation_size,
-                             std::array<uint32_t, 2> offsets )
+                             std::array<uint32_t, 2> offsets,
+                             bool centered )
     {
         if ( image_size.area() == 0 )
             core::exception_builder<std::runtime_error>() << "image size must be non-zero";
@@ -93,8 +96,8 @@ namespace openpiv::core {
         auto x_count = field_shape.width();
         auto y_count = field_shape.height();
 
-        auto x_start_offset = (image_size.width()  - interrogation_size.width()  - (x_offset * (x_count-1)))/2;
-        auto y_start_offset = (image_size.height() - interrogation_size.height() - (y_offset * (y_count-1)))/2;
+        auto x_start_offset = centered ? (image_size.width()  - interrogation_size.width()  - (x_offset * (x_count-1)))/2 : 0;
+        auto y_start_offset = centered ? (image_size.height() - interrogation_size.height() - (y_offset * (y_count-1)))/2 : 0;
 
         std::vector<core::rect> result;
         for ( size_t y=0; y < y_count; ++y )

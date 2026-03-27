@@ -47,31 +47,31 @@ namespace openpiv::algos {
         if (im.pixel_count() == 0)
             return std::make_tuple(ContainedT(0), ContainedT(0));
 
-        ContainedT mean, std_temp, val;
+        double mean, std_temp, val;
         auto p = std::cbegin( im );
         auto e = std::cend( im );
         mean = std_temp = val = 0;
 
         while ( p != e )
         {
-            val = *p;
+            val = static_cast<double>(*p);
             mean = mean + val;
-            std_temp = val*val;
+            std_temp = std_temp + (val*val);
             ++p;
         }
 
-        ContainedT num_pixels = im.pixel_count();
-        mean = mean / num_pixels;
+        auto num_pixels = im.pixel_count();
+        mean = mean / static_cast<double>(num_pixels);
 
-        double var = (double(std_temp) / double(num_pixels)) - (double(mean) * double(mean));
+        double var = (std_temp / num_pixels) - (mean * mean);
 
         // Guard against tiny negatives due to FP error; also convert to double for sqrt
         if (var < 0.0 && var > -std::numeric_limits<double>::epsilon())
             var = 0.0;
 
-        double stdev = std::sqrt(var);
+        double stdev = std::sqrt(std::max(0.0, var));
 
-        return std::make_tuple( mean, ContainedT(stdev) );
+        return std::make_tuple( ContainedT(mean), ContainedT(stdev) );
     }
 
 }

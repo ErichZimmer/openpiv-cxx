@@ -49,7 +49,8 @@ namespace openpiv::piv
         auto grid = core::generate_cartesian_grid(
             image_b.size(), 
             ia_size, 
-            overlap_size 
+            overlap_size,
+            centered
         );
 
         auto field_shape = core::generate_grid_shape(
@@ -62,16 +63,6 @@ namespace openpiv::piv
         auto corr_window_size = core::size{window_size[0], window_size[1]};
         if (zero_pad)
             corr_window_size = core::size{window_size[0] * 2, window_size[1] * 2};
-
-        // Now get dilation
-        auto dilate_rect = core::rect({}, corr_window_size);
-        if (zero_pad)
-            // We zero pad by adding zeros under and to the right of the image.
-            // Too limit peak search, we simply create a rect covering half of
-            // the original correlation matrix (e.g., non-padded area)
-            dilate_rect = core::rect({window_size[0] / 2, window_size[1] / 2}, {window_size[0] / 2, window_size[1] / 2});
-        else
-            dilate_rect = dilate_rect.dilate(0.5);
         
         // Get FFT correlator (this is somewhat ugly due to pointer to function, but is the most concise?)
         auto fft_algo = algos::PocketFFT( corr_window_size );
@@ -96,14 +87,13 @@ namespace openpiv::piv
             &correlator,
             &divisor_corr,
             &limit_search,
-            &dilate_rect,
             &field_coords,
             &field_data
         ]( size_t i, const core::rect& ia)
         {
             // Get relavant data from the images
-            ImageT view_a{ core::extract( image_a, ia ) };
-            ImageT view_b{ core::extract( image_b, ia ) };
+            const ImageT view_a{ core::extract( image_a, ia ) };
+            const ImageT view_b{ core::extract( image_b, ia ) };
 
             // Standardize the image
             auto [view_a_mean, view_a_std] = algos::find_mean_std(view_a);
@@ -113,16 +103,24 @@ namespace openpiv::piv
             ImageT iw_a{corr_window_size};
             ImageT iw_b{corr_window_size};
 
-            // Make sure iw_a and iw_b are xeroed out
+            // Make sure iw_a and iw_b are zeroed out
             //core::fill(iw_a, ContainerT(0));
             //core::fill(iw_b, ContainerT(0));
+
+            // if the corr window size is different than ia size, adjust
+            std::array<size_t, 2> offset{0};
+            if (corr_window_size != ia.size())
+            {
+                offset[0] = ia.width() / 2;
+                offset[1] = ia.height() / 2;
+            }
 
             for (size_t j = 0; j < view_a.height(); ++j)
             {
                 for (size_t i = 0; i < view_a.width(); ++i)
                 {
-                    iw_a[{i,j}] = (view_a[{i,j}] - view_a_mean); // / view_a_std;
-                    iw_b[{i,j}] = (view_b[{i,j}] - view_b_mean); // / view_b_std;
+                    iw_a[{i + offset[0], j + offset[1]}] = (view_a[{i,j}] - view_a_mean); // / view_a_std;
+                    iw_b[{i + offset[0], j + offset[1]}] = (view_b[{i,j}] - view_b_mean); // / view_b_std;
                 }
             }
 
@@ -138,10 +136,15 @@ namespace openpiv::piv
 
             core::peaks_t<core::g_f64> peaks;
 
+            // Get default dilation
+            double dilation_ratio = 1.0;
+            if (corr_window_size != ia.size())
+                dilation_ratio *= 0.5;
+
             if (limit_search)
             {
                 // reduce search radius
-                auto centre = core::create_image_view( output, dilate_rect );
+                auto centre = core::create_image_view( output, output.rect().dilate(0.5) );
                 peaks = core::find_peaks( centre, num_peaks, radius );
             } else {
                 peaks = core::find_peaks( output, num_peaks, radius );
@@ -152,7 +155,7 @@ namespace openpiv::piv
             auto midpoint = ia.midpoint();
 
             field_coords[i] = midpoint;
-            field_coords[i][1] = image_a.height() - midpoint[1];
+            //field_coords[i][1] = image_a.height() - midpoint[1];
 
             // Early escape if not enough peaks were found
             if ( peaks.size() != num_peaks )
@@ -163,8 +166,9 @@ namespace openpiv::piv
             // Get subpixel information and add it to vector field data
             auto peak = peaks[0];
             auto peak_location = core::fit_simple_gaussian( peak );
-            field_data.u[i] = midpoint[0] - (bl[0] + peak_location[0]);
-            field_data.v[i] = midpoint[1] - (bl[1] + peak_location[1]);
+            // u and v signs are swapped to match openpiv
+            field_data.u[i] = -(midpoint[0] - (bl[0] + peak_location[0] - offset[0]));
+            field_data.v[i] = -(midpoint[1] - (bl[1] + peak_location[1] - offset[1]));
             field_data.s2n[i]  = peaks[0][{1, 1}] / peaks[1][{1, 1}];
             field_data.peak[i] = peaks[0][{1, 1}];
         };

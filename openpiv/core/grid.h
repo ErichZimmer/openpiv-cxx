@@ -43,7 +43,8 @@ namespace openpiv::core {
     std::vector<core::rect>
     generate_cartesian_grid( const core::size& image_size,
                              const core::size& interrogation_size,
-                             double percentage_offset );
+                             double percentage_offset,
+                             bool centered = true);
 
     /// generate a centred cartesian grid of rectangles with
     /// dimensions \a size and a specified \a offset in x and y
@@ -59,7 +60,8 @@ namespace openpiv::core {
     std::vector<core::rect>
     generate_cartesian_grid( const core::size& image_size,
                              const core::size& interrogation_size,
-                             std::array< uint32_t, 2 > offsets );
+                             std::array< uint32_t, 2 > offsets,
+                             bool centered = true);
 
 } // end of namespace
 
