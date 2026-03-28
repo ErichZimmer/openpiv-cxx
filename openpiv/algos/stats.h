@@ -65,7 +65,7 @@ namespace openpiv::algos {
 
         double var = (std_temp / num_pixels) - (mean * mean);
 
-        // Guard against tiny negatives due to FP error; also convert to double for sqrt
+        // Guard against tiny negatives due to FP error
         if (var < 0.0 && var > -std::numeric_limits<double>::epsilon())
             var = 0.0;
 

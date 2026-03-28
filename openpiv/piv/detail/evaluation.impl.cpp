@@ -20,6 +20,7 @@
 #include "Core/vector_field.h"
 
 #include "threadpool.hpp"
+#include "correlation_utils.impl.h"
 
 
 namespace openpiv::piv
@@ -72,7 +73,8 @@ namespace openpiv::piv
         auto divisor = ImageT(corr_window_size);
         divisor = divisor + ContainerT(1);
 
-        const auto divisor_corr = (fft_algo.*correlator)( divisor, divisor );
+        // If zero padded, add zero padding to the divisor matrix
+        const ImageT corr_div{ (fft_algo.*correlator)( divisor, divisor ) };
 
         // Container for vector field
         auto field_coords = core::grid_coords(field_shape);
@@ -85,7 +87,7 @@ namespace openpiv::piv
             &corr_window_size,
             &fft_algo,
             &correlator,
-            &divisor_corr,
+            &corr_div,
             &limit_search,
             &field_coords,
             &field_data
@@ -107,7 +109,7 @@ namespace openpiv::piv
             //core::fill(iw_a, ContainerT(0));
             //core::fill(iw_b, ContainerT(0));
 
-            // if the corr window size is different than ia size, adjust
+            // If the corr window size is different than ia size, adjust
             std::array<size_t, 2> offset{0};
             if (corr_window_size != ia.size())
             {
@@ -119,36 +121,41 @@ namespace openpiv::piv
             {
                 for (size_t i = 0; i < view_a.width(); ++i)
                 {
-                    iw_a[{i + offset[0], j + offset[1]}] = (view_a[{i,j}] - view_a_mean); // / view_a_std;
-                    iw_b[{i + offset[0], j + offset[1]}] = (view_b[{i,j}] - view_b_mean); // / view_b_std;
+                    // Standardize the pixel intensities
+                    ContainerT val_a = (view_a[{i,j}] - view_a_mean) / view_a_std;
+                    ContainerT val_b = (view_b[{i,j}] - view_b_mean) / view_b_std;
+
+                    // Clip at zero to prevent cross correlation artifacts
+                    val_a = val_a > 0 ? val_a : ContainerT(0);
+                    val_b = val_b > 0 ? val_b : ContainerT(0);
+
+                    iw_a[{i + offset[0], j + offset[1]}] = val_a;
+                    iw_b[{i + offset[0], j + offset[1]}] = val_b;
                 }
             }
 
             // Correlate the image extracts
             ImageT output{ (fft_algo.*correlator)( iw_a, iw_b ) };
-
-            // Normalize to 0..1
-            output = output / divisor_corr;
-
-            // find peaks
-            constexpr uint16_t num_peaks = 2;
-            constexpr uint16_t radius = 1;
-
-            core::peaks_t<core::g_f64> peaks;
-
-            // Get default dilation
+            
+            // Normalize the output
+            output = output / corr_div;
+            
+            // Reduce output correlation matrix size to only contain valid values
             double dilation_ratio = 1.0;
             if (corr_window_size != ia.size())
                 dilation_ratio *= 0.5;
-
+            
             if (limit_search)
-            {
-                // reduce search radius
-                auto centre = core::create_image_view( output, output.rect().dilate(0.5) );
-                peaks = core::find_peaks( centre, num_peaks, radius );
-            } else {
-                peaks = core::find_peaks( output, num_peaks, radius );
-            }
+                dilation_ratio *= 0.5;
+
+            auto valid_corr = core::create_image_view( output, output.rect().dilate(dilation_ratio) );
+            
+            // find peaks
+            core::peaks_t<core::g_f64> peaks;
+            constexpr uint16_t num_peaks = 2;
+            constexpr uint16_t radius = 1;
+
+            peaks = core::find_peaks( valid_corr, num_peaks, radius );
 
             // Add grid to data
             auto bl = ia.bottomLeft();

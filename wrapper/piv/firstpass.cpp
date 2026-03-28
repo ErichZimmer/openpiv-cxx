@@ -90,7 +90,7 @@ void add_piv_firstpass(py::module& m)
         },
 
         py::arg("image_a"),
-         py::arg("image_b"),
+        py::arg("image_b"),
         py::arg("window_size"),
         py::arg("overlap_size"),
         py::arg("zero_pad") = false,
@@ -98,4 +98,38 @@ void add_piv_firstpass(py::module& m)
         py::arg("limit_search") = false,
         py::arg("threads") = 1
     );
+
+    /*
+    m.def("process_images_nsqe",
+          [](ImageT image_a, 
+             ImageT image_b,
+             std::array<uint32_t,2> window_size,
+             std::array<uint32_t,2> overlap_size,
+             bool zero_pad, 
+             bool centered, 
+             int32_t threads) -> py::array_t<double>
+          {
+              auto [coords, data] = piv::process_images_nsqe(
+                image_a, 
+                image_b,
+                window_size, 
+                overlap_size,
+                zero_pad, 
+                centered, 
+                limit_search, 
+                threads
+            );
+
+            return openpiv_to_numpy(coords, data);
+        },
+
+        py::arg("image_a"),
+        py::arg("image_b"),
+        py::arg("window_size"),
+        py::arg("overlap_size"),
+        py::arg("zero_pad") = false,
+        py::arg("centered") = false,
+        py::arg("limit_search") = false,
+        py::arg("threads") = 1
+    */
 };

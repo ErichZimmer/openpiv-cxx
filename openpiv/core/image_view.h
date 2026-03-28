@@ -277,7 +277,6 @@ namespace openpiv::core {
     }
 
     /// standard image view types
-    /// standard image view types
     using image_view_g8     = image_view< g_8 >;
     using image_view_g16    = image_view< g_16 >;
     using image_view_gf     = image_view< g_f >;
