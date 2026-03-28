@@ -17,7 +17,7 @@
 #include "core/image_expression.h"
 #include "core/stream_utils.h"
 #include "core/vector.h"
-#include "Core/vector_field.h"
+#include "core/vector_field.h"
 
 #include "threadpool.hpp"
 #include "correlation_utils.impl.h"
