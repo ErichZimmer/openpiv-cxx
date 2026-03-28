@@ -17,7 +17,9 @@ py.extension_module('pyopenpivcore',
         openpiv_include, 
         pybind_include
     ],
-    cpp_args: ['-D_USE_MATH_DEFINES'],
+    cpp_args: [
+        '-D_USE_MATH_DEFINES'
+    ],
     dependencies: [
         fmt_dep,
         thread_dep

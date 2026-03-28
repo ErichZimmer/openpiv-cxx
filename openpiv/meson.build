@@ -20,6 +20,9 @@ if cxx_compiler == 'gcc'
   cpp_args += cpp.get_supported_arguments(
     '-export-symbols'
   )
+#  cpp_args += cpp.get_supported_arguments(
+#    '-mavx2'
+#  )
 elif cxx_compiler == 'msvc'
   cpp_args += ['-DEXPORT_DLL_SYMBOLS']
 endif

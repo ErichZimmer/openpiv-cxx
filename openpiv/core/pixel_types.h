@@ -367,10 +367,15 @@ public:
 };
 
 
+// primary: not convertible (well-formed)
+template<typename From, typename To, typename = void>
+struct pixeltype_is_convertible : std::false_type { using type = std::false_type; };
+
+// specialization: detected convertible via your helper expression
 template<typename From, typename To>
-struct pixeltype_is_convertible
-    : public pixeltype_is_convertible_helper<From, To>::type
-{};
+struct pixeltype_is_convertible<From, To, std::void_t<
+    decltype( convert( std::declval<From>(), std::declval<To&>() ) )
+>> : std::true_type { using type = std::true_type; };
 
 template<typename From, typename To>
 inline constexpr bool pixeltype_is_convertible_v = pixeltype_is_convertible<From, To>::value;

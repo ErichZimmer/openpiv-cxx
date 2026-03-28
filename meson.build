@@ -112,7 +112,7 @@ tiff_dep = dependency(
   'libtiff', 
   fallback: ['libtiff', 'libtiff4_dep'], 
   include_type: get_option('deps_include_type'),
-  default_options: ['jpeg=enabled', 'zlib=enabled'],
+  default_options: ['zlib=enabled'],
   required: true
 #  static: true
 )
