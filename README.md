@@ -10,6 +10,7 @@ This project is the result of the collaborative effort of numerous researchers i
  * Save images
  * Pre-process and modify images
  * Perform digital PIV analysis including subpixel estimation
+ * Augment into Python workflows
  * and more!
  
 ## Image Loaders
@@ -17,7 +18,7 @@ This project is the result of the collaborative effort of numerous researchers i
 Loading and storing images are crucial for any PIV software. Due to this requirement, openpiv-c--qt implements image loaders that can load, convert, and store images.
 Currently, there are a few extensions that are supported, but more are under development.
 
-|Supported Extensions     | Decode | Encode |
+| Supported Extensions     | Decode | Encode |
 |-------------------------|--------|--------|
 | .b16 (PCO CamWare :tm: )| Planned| -      | 
 | .bmp                    | Planned| Planned| 
@@ -26,6 +27,12 @@ Currently, there are a few extensions that are supported, but more are under dev
 | .pnm (.pbm, .pgm, .ppm) | x      | x      |
 | .tif                    | x      | x      |
 | .webp                   | Planned| Planned|                    
+
+## Python Interface
+The core functions of the OpenPIV c++ library are wrapped in helper functions to allow for efficient use in a Python environment. This enables for the efficiency and performance of c++ to be used in the ease of use and flexibility of Python. Users can expect significant performance increased compared to Python/NumPy based implementations. 
+
+> [!NOTE]
+> Image loaders will not be available if the Python wrapper is built to enable better portability to cloud-based resources.
 
 ## Examples
 
@@ -53,11 +60,14 @@ Building uses meson, and is simplified by using meson wrap files to specify the 
 Unix users can also use a similar method to the Windows build environment as detailed below.
 
 On Windows, the following can be used:
-* install Visual Studio 2019 or 2022. Alternatively, MinGW-64 (installed via TDM-GCC 10) and Intel OneAPI c/c++ compilers are also known to work
+* install Visual Studio 2019 or 2022. Alternatively, MinGW-64 and Intel OneAPI c/c++ compilers are also known to work
 * install miniconda or python along with venv and setup virtual environment
-* pip install cmake (optional)
+* pip install cmake
 * pip install ninja
 * pip install meson
+
+> [!NOTE]
+> Conda environments allows for GNU GCC toolchains to be installed in a pain-free fashion.
 
 To build:
 * `meson setup builddir` Note, it is good practice to setup `--prefix` flags so files are not installed on the system.
