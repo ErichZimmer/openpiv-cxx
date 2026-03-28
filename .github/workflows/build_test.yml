@@ -48,7 +48,3 @@ jobs:
       working-directory: ${{github.workspace}}/builddir
       # Execute tests defined by meson test configuration.
       run: meson test -v -j 1
-
-      working-directory: ${{github.workspace}}/builddir
-      # Execute tests defined by meson test configuration.
-      run: meson test -v
