@@ -74,7 +74,8 @@ To build:
 * `meson compile -C builddir`
 > [!NOTE]
 > It is good practice to setup `--prefix` flags so files are not installed on the current directory.
-> SIMD can be enabled by passing `-march=native` like this: `meson setup builddir -Dcpp_args="-march=native"`
+>
+> SIMD can be enabled using GCC and passing `-march=native` like this: `meson setup builddir -Dcpp_args="-march=native"`
 
 Meson provides multiple build types such as debug, debugoptimized, and release. To change the build type, use the `--buildtype` flag. For example, `meson setup builddir --buildtype debugoptimized`.
 
@@ -89,7 +90,7 @@ To get binaries:
 Sometimes you only want the runtime dynamic libraries and executables. Meson comes with a handy targeted installation using the following command:
  * `meson install -C builddir --tags runtime`
 
-Make sure the prefix, or destdir, is set so binaries are not accidentally installed on the system.
+Make sure the prefix, or destdir, is set so binaries are not accidentally installed somewhere unexpected.
 
 The binaries are located in the build or installation directory:
 
@@ -107,60 +108,11 @@ Install directory:
     * all other dependent shared libraries
     * process (executable)
     * average_subtract (executable)
+    
+> [!WARNING]
+> When using GCC on Windows, libstdc++-6.dll and libgcc_s_seh-1.dll must be in PATH or next to the library dll libraries in order to avoid a missing dll error. When using a different environment from where the build took place, these dll libraries would usually need to be copy and pasted next to libopenpivcore.
 
 ### Raspberry Pi (using deprecated VCPKG build system)
-
-Build times are, as expected, much slower than on a modern Intel CPU, but the code
-will compile. Some observations:
-
-* `VCPKG_FORCE_SYSTEM_BINARIES=1` must be set
-* `VCPKG_MAX_CONCURRENCY=<num cores>` can help if you find you get kernel panics
-  due to poor cooling
-
-Performance isn't terrible: on a raspberry pi model 3B:
-
-```
-$ lscpu
-Architecture:                    aarch64
-CPU op-mode(s):                  32-bit, 64-bit
-Byte Order:                      Little Endian
-CPU(s):                          4
-On-line CPU(s) list:             0-3
-Thread(s) per core:              1
-Core(s) per socket:              4
-Socket(s):                       1
-Vendor ID:                       ARM
-Model:                           4
-Model name:                      Cortex-A53
-Stepping:                        r0p4
-CPU max MHz:                     1200.0000
-CPU min MHz:                     1200.0000
-BogoMIPS:                        38.40
-Vulnerability Itlb multihit:     Not affected
-Vulnerability L1tf:              Not affected
-Vulnerability Mds:               Not affected
-Vulnerability Meltdown:          Not affected
-Vulnerability Spec store bypass: Not affected
-Vulnerability Spectre v1:        Mitigation; __user pointer sanitization
-Vulnerability Spectre v2:        Not affected
-Vulnerability Srbds:             Not affected
-Vulnerability Tsx async abort:   Not affected
-Flags:                           fp asimd evtstrm crc32 cpuid
-
-$ time ./process -s 32 -i ../../../examples/images/F_00001.tif ../../../examples/images/F_00002.tif > out.piv
-[15:59:23 +00:00] [info] [thread 40843] size: 32 x 32
-[15:59:23 +00:00] [info] [thread 40843] overlap: 0.5
-[15:59:23 +00:00] [info] [thread 40843] input files: [../../../examples/images/F_00001.tif, ../../../examples/images/F_00002.tif]
-[15:59:23 +00:00] [info] [thread 40843] execution: pool
-[15:59:23 +00:00] [info] [thread 40843] loaded images: [1024,1024]
-[15:59:23 +00:00] [info] [thread 40843] generated grid for image size: [1024,1024], ia: [32,32] (50% overlap)
-[15:59:23 +00:00] [info] [thread 40843] grid count: 3969
-[15:59:23 +00:00] [info] [thread 40843] processing using thread pool
-
-real    0m1.248s
-user    0m3.249s
-sys     0m0.109s
-```
 
 This is about 1ms per interrogation area (3 cores, 3969 interrogation areas, 1.248s).
 For comparison, on my laptop:
