@@ -70,8 +70,11 @@ On Windows, the following can be used:
 > Conda environments allows for GNU GCC toolchains to be installed in a pain-free fashion.
 
 To build:
-* `meson setup builddir` Note, it is good practice to setup `--prefix` flags so files are not installed on the system.
+* `meson setup builddir`
 * `meson compile -C builddir`
+> [!NOTE]
+> It is good practice to setup `--prefix` flags so files are not installed on the current directory.
+> SIMD can be enabled by passing `-march=native` like this: `meson setup builddir -Dcpp_args="-march=native"`
 
 Meson provides multiple build types such as debug, debugoptimized, and release. To change the build type, use the `--buildtype` flag. For example, `meson setup builddir --buildtype debugoptimized`.
 
