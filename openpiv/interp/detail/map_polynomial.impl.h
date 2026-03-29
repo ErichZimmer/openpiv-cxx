@@ -27,7 +27,7 @@ namespace openpiv::interp
             std::is_same_v<ValueT, double>
         >
     >
-    void poly_interp2d(
+    void lagrange_interp2d(
         const core::image<ContainedT>& src,
         const core::grid_coords& mappings,
         core::image<ContainedT>& out,
