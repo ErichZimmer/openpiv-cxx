@@ -187,7 +187,7 @@ MSVC 2022 compiler (no SIMD optimizations)
 [404804409090600] (24040) INFO: generated grid for image size: [511,369], ia: [32,32] (50% overlap)
 [404804409091800] (24040) INFO: grid count: 660
 [404804409123400] (24040) INFO: processing using thread pool
-** [404804422928400] (24040) INFO: processing time: 13804.900000us, 20.916515us per interrogation area
+**[404804422928400] (24040) INFO: processing time: 13804.900000us, 20.916515us per interrogation area
 
 
 Days              : 0
