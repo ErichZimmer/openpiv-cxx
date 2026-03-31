@@ -24,6 +24,7 @@ namespace openpiv::piv
         ImageT image_b,
         std::array<uint32_t, 2> window_size,
         std::array<uint32_t, 2> overlap_size,
+        bool step,
         bool zero_pad,
         bool centered,
         bool limit_search,

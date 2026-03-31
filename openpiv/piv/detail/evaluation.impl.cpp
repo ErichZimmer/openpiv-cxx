@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <thread>
+#include <exception>
 #include <cmath>
 #include <vector>
 #include <array>
@@ -10,6 +11,7 @@
 #include "algos/pocket_fft.h"
 #include "algos/stats.h"
 #include "core/enumerate.h"
+#include "core/exception_builder.h"
 #include "core/grid.h"
 #include "core/image.h"
 #include "core/pixel_types.h"
@@ -35,15 +37,26 @@ namespace openpiv::piv
         ImageT image_b,
         std::array<uint32_t, 2> window_size,
         std::array<uint32_t, 2> overlap_size,
-        bool zero_pad = true,
-        bool centered = true,
-        bool limit_search = false,
-        int32_t threads = 0
+        bool step,
+        bool zero_pad,
+        bool centered,
+        bool limit_search,
+        int32_t threads
     ){
+        // assert that the window size is even. Odd stuff throughs off the offsets
+        if ((window_size[0] % 2) || (window_size[1] % 2))
+            core::exception_builder<std::runtime_error>() << "dimensions must be even";
+
         // Setup thread counts - 1 =  no threading; 0 = auto-select thread count; >1 = manually select thread count
         uint32_t thread_count = std::thread::hardware_concurrency()-1;
         if (threads > 0)
             thread_count = static_cast<uint32_t>(threads);
+
+        if (!step)
+        {
+            overlap_size[0] = window_size[0] - overlap_size[0];
+            overlap_size[1] = window_size[1] - overlap_size[1];
+        }
 
         // create a grid for processing
         auto ia_size = core::size{window_size[0], window_size[1]};
@@ -60,11 +73,19 @@ namespace openpiv::piv
             overlap_size
         );
 
-        // Zero pad by 2N if requested
+        // Zero pad by 2N,if requested
         auto corr_window_size = core::size{window_size[0], window_size[1]};
         if (zero_pad)
             corr_window_size = core::size{window_size[0] * 2, window_size[1] * 2};
         
+        // Align padding to 8 double/16 float boundary (Supports AVX-512)
+        uint32_t alignment = 8u;
+
+        corr_window_size = {
+            ((corr_window_size.width()   + alignment + 1u) / alignment) * alignment,
+            ((corr_window_size.height()  + alignment + 1u) / alignment) * alignment
+        };
+
         // Get FFT correlator (this is somewhat ugly due to pointer to function, but is the most concise?)
         auto fft_algo = algos::PocketFFT( corr_window_size );
         auto correlator = &algos::PocketFFT::cross_correlate_real<core::image, ContainerT>;
@@ -88,6 +109,7 @@ namespace openpiv::piv
             &fft_algo,
             &correlator,
             &corr_div,
+            &zero_pad,
             &limit_search,
             &field_coords,
             &field_data
@@ -106,15 +128,15 @@ namespace openpiv::piv
             ImageT iw_b{corr_window_size};
 
             // Make sure iw_a and iw_b are zeroed out
-            //core::fill(iw_a, ContainerT(0));
-            //core::fill(iw_b, ContainerT(0));
+            core::fill(iw_a, ContainerT(0));
+            core::fill(iw_b, ContainerT(0));
 
             // If the corr window size is different than ia size, adjust
             std::array<size_t, 2> offset{0};
             if (corr_window_size != ia.size())
             {
-                offset[0] = ia.width() / 2;
-                offset[1] = ia.height() / 2;
+                offset[0] = (corr_window_size.width()  - ia.width())  / 2;
+                offset[1] = (corr_window_size.height() - ia.height()) / 2;
             }
 
             for (size_t j = 0; j < view_a.height(); ++j)
@@ -141,8 +163,9 @@ namespace openpiv::piv
             output = output / corr_div;
             
             // Reduce output correlation matrix size to only contain valid values
+            // Note: We use `zero_pad` here because IW can have different sizes due to alignment padding
             double dilation_ratio = 1.0;
-            if (corr_window_size != ia.size())
+            if (zero_pad)
                 dilation_ratio *= 0.5;
             
             if (limit_search)

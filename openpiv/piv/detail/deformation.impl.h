@@ -22,7 +22,7 @@ namespace openpiv::windef
         const core::grid_coords& coarse_grid,
         const core::size fine_size
     ) {
-        // Get the grid origin and spacing
+        // Get the grid origin and spacing so we can convert to pixel units
         core::size origin = {
             coarse_grid[{0,0}][0],
             coarse_grid[{0,0}][1]
@@ -47,7 +47,7 @@ namespace openpiv::windef
                 x = x - origin[0];
                 y = y - origin[1];
 
-                // scale to spacing
+                // scale spacing to pixels
                 x = x / spacing[0];
                 y = y / spacing[1];
                 
@@ -148,6 +148,11 @@ namespace openpiv::windef
             fine_size
         )
 
+        // Overwrite fine grid values with update grid coords
+        // We basically are matching this in NumPy syntax
+        // dx, dy = np.meshgrid(np.arange(img_shape[1]), np.arange(img_shape[0]))
+        // dx = dx + du # du is dense interpolation of u
+        // dy = dy + dv # du is dense interpolation of v
         core::apply(
             fine_grid,
             [w=fine_grid.width(), h=fine_grid.height(), &fine_data]( auto i, auto) -> core::point2<double>
@@ -190,6 +195,11 @@ namespace openpiv::windef
         auto fine_grid_forward = fine_grid;
         auto fine_grid_reverse = fine_grid;
 
+        // Overwrite fine grid values with update grid coords
+        // We basically are matching this in NumPy syntax
+        // dx, dy = np.meshgrid(np.arange(img_shape[1]), np.arange(img_shape[0]))
+        // dx = dx - du/2 # du is dense interpolation of u
+        // dy = dy - dv/2 # du is dense interpolation of v
         core::apply(
             fine_grid_reverse,
             [w=fine_grid.width(), h=fine_grid.height(), &fine_data]( auto i, auto) -> core::point2<double>
@@ -204,6 +214,7 @@ namespace openpiv::windef
             }
         );
 
+        // Same thing here, except we add instead of subtract
         core::apply(
             fine_grid_forward,
             [w=fine_grid.width(), h=fine_grid.height(), &fine_data]( auto i, auto) -> core::point2<double>
@@ -220,7 +231,6 @@ namespace openpiv::windef
 
         return {fine_grid_reverse, fine_grid_forward};
     }
-
 
 
 } // end of namespace
