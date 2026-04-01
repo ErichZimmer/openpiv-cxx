@@ -8,13 +8,14 @@
 #include "core/pixel_types.h"
 #include "core/vector_field.h"
 #include "piv/correlation_utils.h"
+#include "core/dll_export.h"
 
 namespace openpiv::piv
 {
     using namespace openpiv::core;
 
     // TODO: Add future templating to allow float or double precision
-     std::tuple<core::grid_coords, core::grid_data> process_images_standard(
+    DLL_EXPORT std::tuple<core::grid_coords, core::grid_data> process_images_standard(
         const ImageT& image_a,
         const ImageT& image_b,
         std::array<uint32_t, 2> window_size,
@@ -41,6 +42,3 @@ namespace openpiv::piv
     */
 
 } // end of namespace
-
-
-#include "piv/detail/firstpass.impl.h"
