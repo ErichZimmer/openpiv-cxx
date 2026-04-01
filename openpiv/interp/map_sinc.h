@@ -37,7 +37,7 @@ namespace openpiv::interp {
         const core::image<ContainedT>& src,
         const core::grid_coords& mappings,
         core::image<ContainedT>& out,
-        int K
+        int k
     );   
 
 } // end of namespace

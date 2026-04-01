@@ -1,4 +1,4 @@
-#include "evaluation.impl.h"
+#include "firstpass.impl.h"
 
 #include <atomic>
 #include <thread>
@@ -10,6 +10,7 @@
 
 #include "algos/pocket_fft.h"
 #include "algos/stats.h"
+
 #include "core/enumerate.h"
 #include "core/exception_builder.h"
 #include "core/grid.h"
@@ -22,7 +23,8 @@
 #include "core/vector_field.h"
 
 #include "threadpool.hpp"
-#include "correlation_utils.impl.h"
+
+#include "piv/deformation.h"
 
 
 namespace openpiv::piv
@@ -33,8 +35,8 @@ namespace openpiv::piv
 
     // Basic cross-correlation
     std::tuple<core::grid_coords, core::grid_data> process_images_standard(
-        ImageT image_a,
-        ImageT image_b,
+        const ImageT& image_a,
+        const ImageT& image_b,
         std::array<uint32_t, 2> window_size,
         std::array<uint32_t, 2> overlap_size,
         bool step,

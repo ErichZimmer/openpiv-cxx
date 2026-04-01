@@ -4,10 +4,11 @@
 #include <cmath>
 #include <type_traits>
 
-#include "core/vector_field.h"
 #include "core/image.h"
 #include "core/image_type_traits.h"
 #include "core/pixel_types.h"
+#include "core/vector_field.h"
+
 #include "interp_common.impl.h"
 
 
@@ -15,17 +16,14 @@ namespace openpiv::interp
 {
     using namespace openpiv::core;
 
-    inline std::vector<double> poly_weights(double r, int k);
+    std::vector<double> poly_weights(double r, int k);
+
 
     template <
         template<typename> class ImageT,
         typename ContainedT,
-        typename ValueT = typename ContainedT::value_t,
-        typename = std::enable_if_t<
-            is_imagetype_v<ImageT<ContainedT>> &&
-            is_real_mono_pixeltype_v<ContainedT> &&
-            std::is_same_v<ValueT, double>
-        >
+        typename,
+        typename
     >
     void lagrange_interp2d(
         const core::image<ContainedT>& src,
@@ -79,4 +77,5 @@ namespace openpiv::interp
             }
         }
     }
-}
+
+} // end of namespace

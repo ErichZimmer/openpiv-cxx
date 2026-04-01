@@ -2,13 +2,16 @@ openpiv_src = [
     'core/size.cpp',
     'core/rect.cpp',
     'core/util.cpp',
+    'core/detail/grid.impl.cpp',
     'loaders/image_loader.cpp',
     'loaders/pnm_image_loader.cpp',
     'loaders/tiff_image_loader.cpp',
     'interp/detail/interp_common.impl.cpp',
     'interp/detail/map_polynomial.impl.cpp',
     'interp/detail/map_sinc.impl.cpp',
-    'piv/detail/evaluation.impl.cpp',
+    'piv/detail/deformation.impl.cpp',
+    'piv/detail/firstpass.impl.cpp',
+    'piv/detail/multipass.impl.cpp',
     libtiff_cpp_include
 ]
 

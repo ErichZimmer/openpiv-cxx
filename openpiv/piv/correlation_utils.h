@@ -13,4 +13,8 @@ namespace openpiv::piv
 
     using namespace openpiv::core;
 
+    using FloatT = double;
+    using ContainerT = core::g<FloatT>;
+    using ImageT = core::image<ContainerT>;
+
 } // end of namespace

@@ -7,7 +7,6 @@
 #include "core/pixel_types.h"
 #include "core/vector_field.h"
 
-
 namespace openpiv::interp {
     using namespace openpiv::core;
 
@@ -23,7 +22,7 @@ namespace openpiv::interp {
      * @note Image borders are handled using a mirror scheme (dcb|abcd|cba)
      * @note The interpolation function evaluates everything using g_f64 (doubles) under-the-hood. This may or may not require type conversions depending on the image pixel types.
      */
-     template <
+    template <
         template<typename> class ImageT,
         typename ContainedT,
         typename ValueT = typename ContainedT::value_t,

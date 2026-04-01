@@ -5,7 +5,7 @@
 namespace openpiv::interp
 {
     // TODO: optimize using lookup tables (LUT) descritized to 256 with linear interp
-    inline std::vector<double> poly_weights(double r, int k)
+    std::vector<double> poly_weights(double r, int k)
     {
         const int n = 2 * k;
 
@@ -31,5 +31,5 @@ namespace openpiv::interp
 
         return w;
     }
-}
 
+} // end of namespace
