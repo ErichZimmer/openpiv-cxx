@@ -12,6 +12,8 @@ void add_size(py::module &);
 void add_vector(py::module &);
 void add_pixel_types(py::module &);
 void add_image(py::module &);
+void add_grid_coords(py::module &);
+void add_grid_data(py::module &);
 void add_piv_firstpass(py::module &);
 
 PYBIND11_MODULE(pyopenpivcore, m) {
@@ -36,6 +38,8 @@ PYBIND11_MODULE(pyopenpivcore, m) {
     add_vector(m);
     add_pixel_types(m);
     add_image(m);
+    add_grid_coords(m);
+    add_grid_data(m);
     add_piv_firstpass(m);
 
 #ifdef VERSION_INFO

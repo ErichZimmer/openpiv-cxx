@@ -74,7 +74,7 @@ void add_piv_firstpass(py::module& m)
              bool zero_pad, 
              bool centered, 
              bool limit_search, 
-             int32_t threads) -> py::array_t<double>
+             int32_t threads) -> py::tuple
           {
               auto [coords, data] = piv::process_images_standard(
                 image_a, 
@@ -88,7 +88,7 @@ void add_piv_firstpass(py::module& m)
                 threads
             );
 
-            return openpiv_to_numpy(coords, data);
+            return py::make_tuple(std::move(coords), std::move(data));
         },
 
         py::arg("image_a"),

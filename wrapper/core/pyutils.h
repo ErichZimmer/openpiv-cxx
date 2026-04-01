@@ -3,6 +3,7 @@
 
 // openpiv
 #include "core/image.h"
+#include "core/point.h"
 
 // std
 #include <array>
@@ -90,8 +91,10 @@ struct pixel_underlying_type_trait
             return to_array<N>("16");
         else if constexpr (std::is_same_v<T, int32_t> )
             return to_array<N>("32");
+        else if constexpr (std::is_same_v<T, float> )
+            return to_array<N>("f32");
         else if constexpr (std::is_same_v<T, double> )
-            return to_array<N>("f");
+            return to_array<N>("f64");
 
         return to_array<N>("unknown type");
     }
@@ -104,7 +107,8 @@ static_assert(pixel_underlying_type_trait<uint32_t>::name() == "u32");
 static_assert(pixel_underlying_type_trait<int8_t>::name() == "8");
 static_assert(pixel_underlying_type_trait<int16_t>::name() == "16");
 static_assert(pixel_underlying_type_trait<int32_t>::name() == "32");
-static_assert(pixel_underlying_type_trait<double>::name() == "f");
+static_assert(pixel_underlying_type_trait<float>::name() == "f32");
+static_assert(pixel_underlying_type_trait<double>::name() == "f64");
 
 
 template <template <typename> class T, typename U>
@@ -130,7 +134,7 @@ struct pixel_type_trait
 static_assert(pixel_type_trait<g, uint8_t>::name() == "g_u8");
 static_assert(pixel_type_trait<rgba, uint16_t>::name() == "rgba_u16");
 static_assert(pixel_type_trait<yuva, uint32_t>::name() == "yuva_u32");
-static_assert(pixel_type_trait<complex, double>::name() == "c_f");
+static_assert(pixel_type_trait<complex, double>::name() == "c_f64");
 
 
 template <template <typename> class I,
@@ -154,6 +158,8 @@ struct image_type_trait
             return { row_stride, column_stride, 4 };
         else if constexpr (std::is_same_v<P<U>, complex<U>>)
             return { row_stride, column_stride, 2 };
+        else if constexpr (std::is_same_v<P<U>, point2<U>>)
+            return { row_stride, column_stride, 2 };
         else
             return { row_stride, column_stride };
     }
@@ -167,6 +173,8 @@ struct image_type_trait
             return { im.height(), im.width(), 4 };
         else if constexpr (std::is_same_v<P<U>, complex<U>>)
             return { im.height(), im.width(), 2 };
+        else if constexpr (std::is_same_v<P<U>, point2<U>>)
+            return { im.height(), im.width(), 2 };
         else
             return { im.height(), im.width() };
     }
@@ -177,5 +185,5 @@ struct image_type_trait
 static_assert(image_type_trait<image, g, uint8_t>::name() == "image_g_u8");
 static_assert(image_type_trait<image, rgba, uint16_t>::name() == "image_rgba_u16");
 static_assert(image_type_trait<image, yuva, uint32_t>::name() == "image_yuva_u32");
-static_assert(image_type_trait<image, complex, double>::name() == "image_c_f");
+static_assert(image_type_trait<image, complex, double>::name() == "image_c_f64");
 

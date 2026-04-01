@@ -7,6 +7,7 @@ sources = [
     'core/vector.cpp',
     'core/pixel_types.cpp',
     'core/image.cpp',
+    'core/vector_field.cpp',
     'piv/firstpass.cpp',
     'module/module.cpp'
 ]
