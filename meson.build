@@ -178,6 +178,5 @@ pkgconfig.generate(
   name: meson.project_name(),
   version: meson.project_version(),
   description: 'Open-source Particle Image Velocimetry software in c++',
-  libraries: [openpiv_lib],
-  requires: [libopenpivcore_deps]
+  libraries: [openpiv_lib]
 )
