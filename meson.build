@@ -36,6 +36,10 @@ if cxx_compiler != 'msvc'
   )
 endif
 
+# Build configuration
+build_wrapper = get_option('build_wrapper')
+disable_image_loaders = get_option('disable_image_loaders')
+
 pocketfft_include = include_directories(
   'external/pocketfft'
 )
@@ -92,30 +96,50 @@ if not fmt_dep.found()
   fmt_dep = fmt.get_variable('fmt_header_only_dep')
 endif
 
-jpeg_dep = dependency(
-  'libjpeg', 
-  fallback: ['libjpeg-turbo', 'jpeg_dep'], 
-  include_type: get_option('deps_include_type'),
-  required: true
-#  static: true
-)
+libopenpivcore_deps = [
+  fmt_dep,
+  thread_dep
+]
 
-zlib_dep = dependency(
-  'zlib', 
-  fallback: ['zlib', 'zlib_dep'],
-  include_type: get_option('deps_include_type'),
-  required: true
-#  static: true
-)
+openpiv_deps = [
+  cxxopts_dep,
+  fmt_dep,
+  thread_dep
+]
 
-tiff_dep = dependency(
-  'libtiff', 
-  fallback: ['libtiff', 'libtiff4_dep'], 
-  include_type: get_option('deps_include_type'),
-  default_options: ['zlib=enabled'],
-  required: true
-#  static: true
-)
+if not disable_image_loaders
+  jpeg_dep = dependency(
+    'libjpeg', 
+    fallback: ['libjpeg-turbo', 'jpeg_dep'], 
+    include_type: get_option('deps_include_type'),
+    required: true
+  #  static: true
+  )
+
+  zlib_dep = dependency(
+    'zlib', 
+    fallback: ['zlib', 'zlib_dep'],
+    include_type: get_option('deps_include_type'),
+    required: true
+  #  static: true
+  )
+
+  tiff_dep = dependency(
+    'libtiff', 
+    fallback: ['libtiff', 'libtiff4_dep'], 
+    include_type: get_option('deps_include_type'),
+    default_options: ['zlib=enabled'],
+    required: true
+  #  static: true
+  )
+
+  libopenpivcore_deps += [
+#    jpeg_dep, # jpeg image loaders are not currently implemented
+#    png_dep, # png image loaders are not currently implemented
+#    raw_dep, # raw image loaders are not currently implemented
+    tiff_dep,
+  ]
+endif
 
 found_benchmark = false
 if get_option('benchmarks').enabled()
@@ -126,23 +150,10 @@ if get_option('benchmarks').enabled()
     found_benchmark = benchmark_dep.found()
 endif
 
-libopenpivcore_deps = [
-  fmt_dep,
-#  jpeg_dep, # jpeg image loaders are not currently implemented
-#  png_dep, # png image loaders are not currently implemented
-#  raw_dep, # raw image loaders are not currently implemented
-  tiff_dep,
-  thread_dep
-]
-
-openpiv_deps = [
-  cxxopts_dep,
-  fmt_dep,
-  thread_dep
-]
-
+# build the libopenpivcore library
 subdir('openpiv')
 
+# and declare it as a subproject dependency
 openpiv_dep = declare_dependency(
     include_directories: openpiv_include,
     dependencies: libopenpivcore_deps,
@@ -153,7 +164,9 @@ subdir('examples')
 
 py = import('python').find_installation(pure: false)
 
-subdir('wrapper')
+if build_wrapper
+  subdir('wrapper')
+endif
 
 if not meson.is_subproject()
   subdir('tests')
@@ -164,6 +177,7 @@ pkgconfig = import('pkgconfig')
 pkgconfig.generate(
   name: meson.project_name(),
   version: meson.project_version(),
-  description: 'Open-source Particle Image Velocimetry in c++',
-  libraries: [openpiv_lib]
+  description: 'Open-source Particle Image Velocimetry software in c++',
+  libraries: [openpiv_lib],
+  requires: [libopenpivcore_deps]
 )

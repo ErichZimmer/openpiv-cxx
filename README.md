@@ -32,7 +32,7 @@ Currently, there are a few extensions that are supported, but more are under dev
 The core functions of the OpenPIV c++ library are wrapped in helper functions to allow for efficient use in a Python environment. This enables for the efficiency and performance of c++ to be used in the ease of use and flexibility of Python. Users can expect significant performance increased compared to Python/NumPy based implementations. 
 
 > [!NOTE]
-> Image loaders will not be available if the Python wrapper is built to enable better portability to cloud-based resources.
+> Image loaders should be disabled when the Python wrapper is built to enable better portability to cloud-based resources.
 
 ## Examples
 
@@ -76,6 +76,8 @@ To build:
 > It is good practice to setup `--prefix` flags so files are not installed on the current directory.
 >
 > SIMD can be enabled using GCC and passing `-march=native` like this: `meson setup builddir -Dcpp_args="-march=native"`
+>
+> The Python wrapper can be built by enabling the build_wrapper option like this: `meson setup builddir -Dbuild_wrapper=true -Ddisable_image_loaders=true`
 
 Meson provides multiple build types such as debug, debugoptimized, and release. To change the build type, use the `--buildtype` flag. For example, `meson setup builddir --buildtype debugoptimized`.
 
@@ -110,7 +112,7 @@ Install directory:
     * average_subtract (executable)
     
 > [!WARNING]
-> When using GCC on Windows, libstdc++-6.dll and libgcc_s_seh-1.dll must be in PATH or next to the library dll libraries in order to avoid a missing dll error. When using a different environment from where the build took place, these dll libraries would usually need to be copy and pasted next to libopenpivcore.
+> When using GCC on Windows, libstdc++-6.dll and libgcc_s_seh-1.dll must be in PATH or next to the dll libraries in order to avoid a missing dll error. When using a different environment from where the build took place, these dll libraries would usually need to be copy and pasted next to libopenpivcore.
 
 ## Dependencies
 * c++17 compiler e.g. clang++-5.0, gcc8

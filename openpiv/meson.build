@@ -4,16 +4,21 @@ openpiv_src = [
     'core/util.cpp',
     'core/detail/grid.impl.cpp',
     'loaders/image_loader.cpp',
-    'loaders/pnm_image_loader.cpp',
-    'loaders/tiff_image_loader.cpp',
     'interp/detail/interp_common.impl.cpp',
     'interp/detail/map_polynomial.impl.cpp',
     'interp/detail/map_sinc.impl.cpp',
     'piv/detail/deformation.impl.cpp',
     'piv/detail/firstpass.impl.cpp',
     'piv/detail/multipass.impl.cpp',
-    libtiff_cpp_include
 ]
+
+if not disable_image_loaders
+  openpiv_src += [
+    'loaders/pnm_image_loader.cpp',
+    'loaders/tiff_image_loader.cpp',
+    libtiff_cpp_include
+  ]
+endif
 
 cpp_args = [
   '-D_USE_MATH_DEFINES'
