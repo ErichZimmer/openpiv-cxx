@@ -15,6 +15,7 @@ void add_image(py::module &);
 void add_grid_coords(py::module &);
 void add_grid_data(py::module &);
 void add_piv_firstpass(py::module &);
+void add_piv_multipass(py::module &);
 
 PYBIND11_MODULE(pyopenpivcore, m) {
     m.doc() = R"pbdoc(
@@ -41,6 +42,7 @@ PYBIND11_MODULE(pyopenpivcore, m) {
     add_grid_coords(m);
     add_grid_data(m);
     add_piv_firstpass(m);
+    add_piv_multipass(m);
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

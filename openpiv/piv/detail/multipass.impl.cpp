@@ -1,4 +1,4 @@
-#include "multipass.impl.h"
+#include "piv/multipass.h"
 
 #include <atomic>
 #include <thread>
@@ -27,7 +27,7 @@
 #include "interp/remap.h"
 
 #include "piv/deformation.h"
-#include "piv/evaluation.h"
+#include "piv/firstpass.h"
 
 namespace openpiv::piv
 {
