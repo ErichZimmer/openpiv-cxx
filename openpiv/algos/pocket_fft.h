@@ -77,9 +77,9 @@ namespace openpiv::algos {
         PocketFFT( const core::size& size )
             : size_(size)
         {
-            // ensure power-of-two sizes
-            if ( !(is_pow2(size_.width()) && is_pow2(size_.height()) ) )
-                exception_builder<std::runtime_error>() << "dimensions must be power of 2: " << size_;
+            // ensure multiple of 8 for doubles to ensure SIMD alignment
+            if ( !(is_mult8(size_.width()) && is_mult8(size_.height()) ) )
+                exception_builder<std::runtime_error>() << "dimensions must be multiple of 8: " << size_;
         }
 
         /// Perform a 2-D FFT; will always produce a complex floating point image output

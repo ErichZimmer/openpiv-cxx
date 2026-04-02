@@ -1,7 +1,11 @@
 avd_sub_exec = executable(
     'process',
     'main.cpp',
-    include_directories: [openpiv_include, pocketfft_include],
+    include_directories: [
+        openpiv_include,
+        pocketfft_include, 
+        threadlib_include
+    ],
     dependencies: [
         cxxopts_dep,
         fmt_dep,

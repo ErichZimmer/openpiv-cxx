@@ -1,2 +1,4 @@
 option('deps_include_type', type : 'string', value : 'non-system')
 option('benchmarks', type : 'feature', value : 'disabled')
+option('build_wrapper', type : 'boolean', value : false)
+option('disable_image_loaders', type : 'boolean', value : false)

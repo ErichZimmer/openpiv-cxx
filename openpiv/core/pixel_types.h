@@ -235,7 +235,9 @@ inline constexpr complex<T> exp( const complex<T>& c )
 using c_8  = complex<uint8_t>;
 using c_16 = complex<uint16_t>;
 using c_32 = complex<uint32_t>;
-using c_f  = complex<double>;
+using c_f32  = complex<float>;
+using c_f64  = complex<double>;
+using c_f    = complex<double>;
 
 template < typename T >
 std::ostream& operator<<(std::ostream& os, const complex<T>& v )
@@ -278,12 +280,17 @@ struct g
 using g_8  = g<uint8_t>;
 using g_16 = g<uint16_t>;
 using g_32 = g<uint32_t>;
-using g_f  = g<double>;
+using g_f32  = g<float>;
+using g_f64  = g<double>;
+using g_f    = g<double>;
 
 inline g_8  operator ""_g8 ( unsigned long long v ) { return g_8( v ); }
 inline g_16 operator ""_g16( unsigned long long v ) { return g_16( v ); }
 inline g_32 operator ""_g32( unsigned long long v ) { return g_32( v ); }
-inline g_f  operator ""_gf ( long double v )        { return g_f( v ); }
+inline g_f32  operator ""_gf32 ( long double v )    { return g_f32( v ); }
+inline g_f64  operator ""_gf64 ( long double v )    { return g_f64( v ); }
+inline g_f    operator ""_gf   ( long double v )    { return g_f( v ); }
+
 
 template < typename T >
 std::ostream& operator<<(std::ostream& os, const g<T>& v )
@@ -360,10 +367,15 @@ public:
 };
 
 
+// primary: not convertible (well-formed)
+template<typename From, typename To, typename = void>
+struct pixeltype_is_convertible : std::false_type { using type = std::false_type; };
+
+// specialization: detected convertible via your helper expression
 template<typename From, typename To>
-struct pixeltype_is_convertible
-    : public pixeltype_is_convertible_helper<From, To>::type
-{};
+struct pixeltype_is_convertible<From, To, std::void_t<
+    decltype( convert( std::declval<From>(), std::declval<To&>() ) )
+>> : std::true_type { using type = std::true_type; };
 
 template<typename From, typename To>
 inline constexpr bool pixeltype_is_convertible_v = pixeltype_is_convertible<From, To>::value;
@@ -448,6 +460,10 @@ constexpr std::string_view pixeltype_name()
         return "g<uint16_t>";
     if constexpr (std::is_same_v<T, g_32>)
         return "g<uint32_t>";
+    if constexpr (std::is_same_v<T, g_f32>)
+        return "g<float>";
+    if constexpr (std::is_same_v<T, g_f64>)
+        return "g<double>";
     if constexpr (std::is_same_v<T, g_f>)
         return "g<double>";
 
@@ -457,6 +473,10 @@ constexpr std::string_view pixeltype_name()
         return "complex<uint16_t>";
     if constexpr (std::is_same_v<T, c_32>)
         return "complex<uint32_t>";
+    if constexpr (std::is_same_v<T, c_f32>)
+        return "complex<float>";
+    if constexpr (std::is_same_v<T, c_f64>)
+        return "complex<double>";
     if constexpr (std::is_same_v<T, c_f>)
         return "complex<double>";
 

@@ -277,11 +277,19 @@ namespace openpiv::core {
     }
 
     /// standard image view types
+    using image_view_g8     = image_view< g_8 >;
+    using image_view_g16    = image_view< g_16 >;
+    using image_view_gf     = image_view< g_f >;
+    using image_view_rgba8  = image_view< rgba_8 >;
+    using image_view_rgba16 = image_view< rgba_16 >;
+    using image_view_cf     = image_view< c_f >;
+
     using g8_image_view     = image_view< g_8 >;
     using g16_image_view    = image_view< g_16 >;
     using gf_image_view     = image_view< g_f >;
     using rgba8_image_view  = image_view< rgba_8 >;
     using rgba16_image_view = image_view< rgba_16 >;
     using cf_image_view     = image_view< c_f >;
+
 
 }
