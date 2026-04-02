@@ -20,7 +20,7 @@ using namespace openpiv::core;
 
 namespace py = pybind11;
 
-bool add_grid_coords(py::module& m)
+void add_grid_coords(py::module& m)
 {
     using U = double;
     using PU = core::point2<U>;
@@ -63,12 +63,10 @@ bool add_grid_coords(py::module& m)
         .def("__setitem__",
              [](core::grid_coords& p, const point2<uint32_t>& i, PU v) {
                  p[i] = v;
-             });
-             
-    return true;
+             });             
 }
 
-bool add_grid_data(py::module& m)
+void add_grid_data(py::module& m)
 {
     py::class_<grid_data>(m, "grid_data")
         .def(py::init<uint32_t, uint32_t>())
@@ -78,8 +76,6 @@ bool add_grid_data(py::module& m)
         .def_readwrite("v", &grid_data::v)
         .def_readwrite("s2n", &grid_data::s2n)
         .def_readwrite("peak", &grid_data::peak);
-
-    return true;
 }
     
 
