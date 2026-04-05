@@ -8,6 +8,9 @@
 #include "core/pixel_types.h"
 #include "core/vector_field.h"
 
+#include "piv/piv_common.h"
+
+
 namespace openpiv::piv
 {
     using namespace openpiv::core;
@@ -32,9 +35,10 @@ namespace openpiv::piv
         const core::image<ContainedT>& frame_b,
         const core::grid_coords& coarse_grid,
         const core::grid_data& coarse_data,
-        int method,
-        int order,
-        int k
+        deform_method method,
+        deform_order order,
+        int32_t k,
+        int32_t threads
     );
 
 } // end of namespace

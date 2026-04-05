@@ -14,8 +14,9 @@ namespace openpiv::interp {
      * @brief Map new coordinates of an image using Lagrange interpolation.
      * 
      * @param image The input image to interpolate.
-     * @param coordinates The grid coordinates at which the image is evaluated.
+     * @param mappings The grid coordinates at which the image is evaluated.
      * @param k The half-size (radius) of the kernel (e.g., k=3 --> 6x6 kernel).
+     * @param threads The amount of threads to use during interpolation
      * @return output The interpolated image.
      *
      * @note A kernel half-size of 1 is equivalen to the shifted linear interpolation scheme.
@@ -36,7 +37,8 @@ namespace openpiv::interp {
         const core::image<ContainedT>& src,
         const core::grid_coords& mappings,
         core::image<ContainedT>& out,
-        int k
+        int32_t k,
+        int32_t threads
     );   
 
 } // end of namespace

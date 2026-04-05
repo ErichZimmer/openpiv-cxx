@@ -16,6 +16,8 @@
 #include "interp/map_polynomial.h"
 #include "interp/map_sinc.h"
 
+#include "piv/piv_common.h"
+
 
 namespace openpiv::piv
 {
@@ -52,7 +54,8 @@ namespace openpiv::piv
             coarse_data,
             fine_grid,
             fine_data,
-            2 // 4x4 interpolation kernel
+            2, // 4x4 interpolation kernel
+            1 // Only use a single thread
         );
 
         return fine_data;
@@ -125,7 +128,7 @@ namespace openpiv::piv
         {
             for (uint32_t x_ind=0; x_ind<fine_size.width(); x_ind++)
             {
-               double x = static_cast<double>(x_ind);
+                double x = static_cast<double>(x_ind);
                 double y = static_cast<double>(y_ind);
 
                 auto u = fine_data.u[{x_ind,y_ind}];
@@ -208,14 +211,15 @@ namespace openpiv::piv
         const core::image<ContainedT>& frame_b,
         const core::grid_coords& coarse_grid,
         const core::grid_data& coarse_data,
-        int method,
-        int order,
-        int k
+        deform_method method,
+        deform_order order,
+        int32_t k,
+        int32_t threads
     ) {
         auto frame_a_deform = frame_a;
         auto frame_b_deform = frame_b;
 
-        if (order == 1)
+        if (order == deform_order::FORWARD)
         {
             auto deform_forward = create_deformation_forward<core::image, ContainedT>(
                 coarse_grid,
@@ -223,13 +227,14 @@ namespace openpiv::piv
                 frame_a.size()
             );
 
-            if (method == 1)
+            if (method == deform_method::LAGRANGE)
             {
                 interp::lagrange_interp2d<core::image, ContainedT>(
                     frame_b,
                     deform_forward,
                     frame_b_deform,
-                    k
+                    k,
+                    threads
                 );
             }
             else
@@ -238,7 +243,8 @@ namespace openpiv::piv
                     frame_b,
                     deform_forward,
                     frame_b_deform,
-                    k
+                    k,
+                    threads
                 );
             }
         }
@@ -250,36 +256,40 @@ namespace openpiv::piv
                 frame_a.size()
             );
 
-            if (method == 1)
+            if (method == deform_method::LAGRANGE)
             {
                 interp::lagrange_interp2d<core::image, ContainedT>(
-                    frame_b,
+                    frame_a,
                     deform_backward,
                     frame_a_deform,
-                    k
+                    k,
+                    threads
                 );
 
                 interp::lagrange_interp2d<core::image, ContainedT>(
                     frame_b,
                     deform_forward,
                     frame_b_deform,
-                    k
+                    k,
+                    threads
                 );
             }
             else
             {
                 interp::sinc_interp2d<core::image, ContainedT>(
-                    frame_b,
+                    frame_a,
                     deform_backward,
                     frame_a_deform,
-                    k
+                    k,
+                    threads
                 );
 
                 interp::sinc_interp2d<core::image, ContainedT>(
                     frame_b,
                     deform_forward,
                     frame_b_deform,
-                    k
+                    k,
+                    threads
                 );
             }
         }

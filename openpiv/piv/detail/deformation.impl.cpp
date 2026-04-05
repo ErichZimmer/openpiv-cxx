@@ -1,5 +1,3 @@
-#pragma once
-
 #include "deformation.impl.h"
 
 #include <cstdint>

@@ -10,6 +10,7 @@
 #include "core/dll_export.h"
 
 #include "piv/correlation_utils.h"
+#include "piv/piv_common.h"
 
 
 namespace openpiv::piv
@@ -24,9 +25,9 @@ namespace openpiv::piv
         const core::grid_data&   old_data,
         std::array<uint32_t, 2> window_size,
         std::array<uint32_t, 2> overlap_size,
-        int method,
-        int order,
-        int k,
+        deform_method method,
+        deform_order order,
+        int32_t k,
         bool step,
         bool zero_pad,
         bool centered,

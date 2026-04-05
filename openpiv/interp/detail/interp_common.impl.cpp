@@ -10,7 +10,7 @@ namespace openpiv::interp
     {
         const int32_t period = 2*n - 2;   // reflection period
         int32_t x = i % period;           // wrap into period
-        x += (x < 0) * period;             // fix negative mod (branchless)
+        x += (x < 0) * period;            // fix negative mod (branchless)
 
         return n - 1 - std::abs(x - (n - 1));
     }

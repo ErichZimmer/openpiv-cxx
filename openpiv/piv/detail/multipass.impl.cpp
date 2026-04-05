@@ -28,6 +28,7 @@
 
 #include "piv/deformation.h"
 #include "piv/firstpass.h"
+#include "piv/piv_common.h"
 
 namespace openpiv::piv
 {
@@ -43,9 +44,9 @@ namespace openpiv::piv
         const core::grid_data&   old_data,
         std::array<uint32_t, 2> window_size,
         std::array<uint32_t, 2> overlap_size,
-        int method,
-        int order,
-        int k,
+        deform_method method,
+        deform_order order,
+        int32_t k,
         bool step,
         bool zero_pad,
         bool centered,
@@ -105,10 +106,12 @@ namespace openpiv::piv
             field_data,
             method,
             order,
-            k
+            k,
+            threads
         );
 
-        return piv::process_images_standard(
+        // PIV on deformed images
+        auto [new_grid, new_data] = piv::process_images_standard(
             frame_a,
             frame_b,
             window_size,
@@ -119,6 +122,15 @@ namespace openpiv::piv
             limit_search,
             threads
         );
+
+        // Add the refined data to interpolated data
+        for (uint32_t i=0; i < new_grid.pixel_count(); i++)
+        {
+            new_data.u[i] = new_data.u[i] + field_data.u[i];
+            new_data.v[i] = new_data.v[i] + field_data.v[i];
+        }
+
+        return {new_grid, new_data};
     }
 
 } // end of namespace

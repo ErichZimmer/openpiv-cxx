@@ -15,8 +15,9 @@ namespace openpiv::interp {
      * @brief Map new coordinates of an image using sinc interpolation.
      * 
      * @param image The input image to interpolate.
-     * @param coordinates The grid coordinates at which the image is evaluated.
+     * @param mappings The grid coordinates at which the image is evaluated.
      * @param k The half-size (radius) of the kernel (e.g., k=3 --> 7x7 kernel).
+     * @param threads The amount of threads to use during interpolation
      * @return output The interpolated image.
      *
      * @note Only kernel half-sizes of 3 and 5 are allowed due to stability reasons.
@@ -37,7 +38,8 @@ namespace openpiv::interp {
         const core::image<ContainedT>& src,
         const core::grid_coords& mappings,
         core::image<ContainedT>& out,
-        int k
+        int32_t k,
+        int32_t threads
     );   
 
 } // end of namespace

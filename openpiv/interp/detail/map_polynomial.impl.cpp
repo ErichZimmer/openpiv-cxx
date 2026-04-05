@@ -1,23 +1,25 @@
 #include "map_polynomial.impl.h"
 
 #include <vector>
+#include <cstdint>
 
 namespace openpiv::interp
 {
+    
     // TODO: optimize using lookup tables (LUT) descritized to 256 with linear interp
-    std::vector<double> poly_weights(double r, int k)
+    std::vector<double> poly_weights(double r, int32_t k)
     {
-        const int n = 2 * k;
+        const int32_t n = 2 * k;
 
         std::vector<double> w(n);
 
-        for (int i = 0; i < n; ++i)
+        for (int32_t i = 0; i < n; ++i)
         {
             double xi = i - (k - 0.5);
 
             double wi = 1.0;
 
-            for (int j = 0; j < n; ++j)
+            for (int32_t j = 0; j < n; ++j)
             {
                 if (j == i) continue;
 
@@ -29,7 +31,7 @@ namespace openpiv::interp
             w[i] = wi;
         }
 
-        return w;
+        return w; 
     }
 
 } // end of namespace

@@ -8,6 +8,7 @@
 
 #include "piv/firstpass.h"
 #include "piv/multipass.h"
+#include "piv/piv_common.h"
 
 // pybind
 #include <pybind11/pybind11.h>
@@ -74,9 +75,9 @@ void add_piv_multipass(py::module& m)
              const core::grid_data&   old_data,
              std::array<uint32_t, 2> window_size,
              std::array<uint32_t, 2> overlap_size,
-             int method,
-             int order,
-             int k,
+             piv::deform_method method,
+             piv::deform_order order,
+             int32_t k,
              bool step,
              bool zero_pad, 
              bool centered, 
@@ -109,8 +110,8 @@ void add_piv_multipass(py::module& m)
         py::arg("old_data"),
         py::arg("window_size"),
         py::arg("overlap_size"),
-        py::arg("method") = 1,
-        py::arg("order") = 1,
+        py::arg("method") = piv::deform_method::LAGRANGE,
+        py::arg("order") = piv::deform_order::FORWARD,
         py::arg("k") = 3,
         py::arg("step") = false,
         py::arg("zero_pad") = false,

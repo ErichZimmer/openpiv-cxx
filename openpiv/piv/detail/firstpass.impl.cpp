@@ -51,7 +51,7 @@ namespace openpiv::piv
 
         // Setup thread counts - 1 =  no threading; 0 = auto-select thread count; >1 = manually select thread count
         uint32_t thread_count = std::thread::hardware_concurrency()-1;
-        if (threads > 0)
+        if ((threads > 0) && (static_cast<uint32_t>(threads) < thread_count))
             thread_count = static_cast<uint32_t>(threads);
 
         if (!step)
