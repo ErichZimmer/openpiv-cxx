@@ -107,9 +107,9 @@ namespace {
 
     // 8-bit RGB to 16-bit RGBA
     template <>
-    rgba16_image copy<rgba_16, planar_config::CONTIG, sample_format::UINT, 3, 8>(TIFF* tiff, uint32_t width, uint32_t height)
+    image_rgba16 copy<rgba_16, planar_config::CONTIG, sample_format::UINT, 3, 8>(TIFF* tiff, uint32_t width, uint32_t height)
     {
-        rgba16_image im(width, height, 0);
+        image_rgba16 im(width, height, 0);
 
         // allocate line buffer
         size_t bytesPerLine = TIFFScanlineSize( tiff );
