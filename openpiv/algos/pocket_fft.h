@@ -31,16 +31,26 @@ namespace openpiv::algos {
     /// Wrapper for PocketFFT
     ///
     /// This class is thread-safe
+    template <typename T>
     class PocketFFT
     {
+        static_assert(
+            std::is_same_v<T, float> || std::is_same_v<T, double>,
+            "PocketFFT only supports float or double (image_gf32, image_gf64)"
+        );
+
+        using value_t = T;
+        using image_cf_t = core::image< core::complex< value_t > >;  // complex image of T
+        using image_gf_t = core::image< core::g< value_t > >;  // real image of T
+
         const size size_;
 
         /// storage for intermediate data
         struct data_t
         {
-            cf_image output;
+            image_cf_t output;
             std::vector< c_f > fft_buffer;
-            cf_image temp;
+            image_cf_t temp;
         };
 
         /// helpers to allow TLS for intermediate storage
@@ -87,7 +97,7 @@ namespace openpiv::algos {
                    typename ContainedT,
                    typename = typename std::enable_if_t< is_imagetype_v<ImageT<ContainedT>> >
                    >
-        const cf_image& transform( const ImageT<ContainedT>& input, direction d = direction::FORWARD ) const
+        const image_cf_t& transform( const ImageT<ContainedT>& input, direction d = direction::FORWARD ) const
         {
             DECLARE_ENTRY_EXIT
             if ( input.size() != size_ )
@@ -131,7 +141,7 @@ namespace openpiv::algos {
                        is_real_mono_pixeltype_v<ContainedT>
                        >
                    >
-        std::tuple<cf_image&, cf_image&>
+        std::tuple<image_cf_t&, image_cf_t&>
         transform_real( const ImageT<ContainedT>& a,
                         const ImageT<ContainedT>& b,
                         direction d = direction::FORWARD ) const
@@ -243,8 +253,8 @@ namespace openpiv::algos {
         cross_correlate( const ImageT<ContainedT>& a,
                          const ImageT<ContainedT>& b ) const
         {
-            cf_image a_fft{ transform( a, direction::FORWARD ) };
-            cf_image b_fft{ transform( b, direction::FORWARD ) };
+            image_cf_t a_fft{ transform( a, direction::FORWARD ) };
+            image_cf_t b_fft{ transform( b, direction::FORWARD ) };
 
             a_fft = b_fft * conj( a_fft );
             OutT output{ real( transform( a_fft, direction::REVERSE ) ) };
@@ -278,9 +288,9 @@ namespace openpiv::algos {
                    typename ContainedT,
                    typename = typename std::enable_if_t< is_imagetype_v<ImageT<ContainedT>> >
                    >
-        const cf_image& auto_correlate( const ImageT<ContainedT>& a ) const
+        const image_cf_t& auto_correlate( const ImageT<ContainedT>& a ) const
         {
-            cf_image a_fft{ transform( a, direction::FORWARD ) };
+            image_cf_t a_fft{ transform( a, direction::FORWARD ) };
 
             a_fft = abs_sqr( a_fft );
             cache().output = real( transform( a_fft, direction::REVERSE ) );

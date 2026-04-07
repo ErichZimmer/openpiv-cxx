@@ -9,16 +9,12 @@
 #include "core/vector_field.h"
 
 #include "piv/piv_common.h"
+#include "piv/correlation_utils.h"
 
 
 namespace openpiv::piv
 {
     using namespace openpiv::core;
-
-    // TODO: Add future templating to allow float or double precision
-    using FloatT = double;
-    using ContainerT = core::g<FloatT>;
-    using ImageT = core::image<ContainerT>;
 
     template<
         template <typename> class ImageT,
@@ -27,7 +23,7 @@ namespace openpiv::piv
         typename = typename std::enable_if_t<
             is_imagetype_v<ImageT<ContainedT>> &&
             is_real_mono_pixeltype_v<ContainedT> &&
-            std::is_same_v<ValueT,double>
+            std::is_floating_point<ValueT>::value
         >
     >
     std::tuple<core::image<ContainedT>, core::image<ContainedT>> deform_images(

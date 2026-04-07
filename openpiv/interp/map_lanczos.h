@@ -31,7 +31,7 @@ namespace openpiv::interp {
         typename = std::enable_if_t<
             is_imagetype_v<ImageT<ContainedT>> &&
             is_real_mono_pixeltype_v<ContainedT> &&
-            std::is_same_v<ValueT, double>
+            std::is_floating_point<ValueT>::value
         >
     >
     void lanczos_interp2d(

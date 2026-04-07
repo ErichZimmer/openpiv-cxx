@@ -96,7 +96,7 @@ bool add_images(py::module& m)
 
 void add_image(py::module& m)
 {
-    add_images<g, uint8_t, uint16_t, double>(m);
+    add_images<g, uint8_t, uint16_t, float, double>(m);
     add_images<rgba, uint8_t, uint16_t>(m);
     add_images<complex, double>(m);
 }

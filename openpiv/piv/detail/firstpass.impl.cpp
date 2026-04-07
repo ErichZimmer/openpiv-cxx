@@ -89,8 +89,8 @@ namespace openpiv::piv
         };
 
         // Get FFT correlator (this is somewhat ugly due to pointer to function, but is the most concise?)
-        auto fft_algo = algos::PocketFFT( corr_window_size );
-        auto correlator = &algos::PocketFFT::cross_correlate_real<core::image, ContainerT>;
+        auto fft_algo = algos::PocketFFT<FloatT>( corr_window_size );
+        auto correlator = &algos::PocketFFT<FloatT>::cross_correlate_real<core::image, ContainerT>;
 
         // Now get the correlation normalization matrix (note, this isn't zero-normalized CC)
         auto divisor = ImageT(corr_window_size);
@@ -176,11 +176,11 @@ namespace openpiv::piv
             auto valid_corr = core::create_image_view( output, output.rect().dilate(dilation_ratio) );
             
             // find peaks
-            core::peaks_t<core::g_f64> peaks;
+            // core::peaks_t<core::g_f64> peaks;
             constexpr uint16_t num_peaks = 2;
             constexpr uint16_t radius = 1;
 
-            peaks = core::find_peaks( valid_corr, num_peaks, radius );
+            auto peaks = core::find_peaks( valid_corr, num_peaks, radius );
 
             // Add grid to data
             auto bl = ia.bottomLeft();

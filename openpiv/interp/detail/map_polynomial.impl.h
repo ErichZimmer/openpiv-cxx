@@ -39,7 +39,7 @@ namespace openpiv::interp
     )
     {
         // Make sure kernel size is supported
-        if ( !(0 < kernel_half_size < 6) )
+        if ((kernel_half_size < 1) || (kernel_half_size > 5))
             core::exception_builder<std::runtime_error>() << "kernel_half_size must be between 1 and 5";
 
         // Setup thread counts - 1 =  no threading; 0 = auto-select thread count; >1 = manually select thread count

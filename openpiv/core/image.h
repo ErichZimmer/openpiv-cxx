@@ -243,20 +243,15 @@ std::ostream& operator<<( std::ostream& os, const image<T>& p )
 
 
 /// standard image types
-using g8_image     = image< g_8 >;
-using g16_image    = image< g_16 >;
-using gf_image     = image< g_f >;
-using rgba8_image  = image< rgba_8 >;
-using rgba16_image = image< rgba_16 >;
-using cf_image     = image< c_f >;
-
 using image_g8     = image< g_8 >;
 using image_g16    = image< g_16 >;
-using image_gf     = image< g_f >;
 using image_gf32   = image< g_f32 >;
 using image_gf64   = image< g_f64 >;
+using image_gf     = image< g_f >;
 using image_rgba8  = image< rgba_8 >;
 using image_rgba16 = image< rgba_16 >;
+using image_cf32   = image< c_f32 >;
+using image_cf64   = image< c_f64 >;
 using image_cf     = image< c_f >;
 
-}
+} // end of namespace

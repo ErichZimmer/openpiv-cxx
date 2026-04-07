@@ -7,8 +7,9 @@
 #include "core/image.h"
 #include "core/pixel_types.h"
 #include "core/vector_field.h"
-#include "piv/correlation_utils.h"
 #include "core/dll_export.h"
+
+#include "piv/correlation_utils.h"
 
 namespace openpiv::piv
 {

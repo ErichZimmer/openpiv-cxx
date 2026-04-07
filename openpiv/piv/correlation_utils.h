@@ -13,7 +13,7 @@ namespace openpiv::piv
 
     using namespace openpiv::core;
 
-    using FloatT = double;
+    using FloatT = float;
     using ContainerT = core::g<FloatT>;
     using ImageT = core::image<ContainerT>;
 

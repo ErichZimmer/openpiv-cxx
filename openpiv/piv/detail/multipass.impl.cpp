@@ -84,14 +84,14 @@ namespace openpiv::piv
 
 
         // Interpolate old data onto new grid
-        interp::remap2d<core::image, ContainerT>(
+        interp::remap2d<core::image, core::g_f64>(
             old_coords,
             old_data.u,
             field_grid,
             field_data.u
         );
 
-        interp::remap2d<core::image, ContainerT>(
+        interp::remap2d<core::image, core::g_f64>(
             old_coords,
             old_data.v,
             field_grid,

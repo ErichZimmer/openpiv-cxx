@@ -23,7 +23,7 @@ namespace openpiv::interp
         typename = std::enable_if_t<
             is_imagetype_v<ImageT<ContainedT>> &&
             is_real_mono_pixeltype_v<ContainedT> &&
-            std::is_same_v<ValueT, double>
+            std::is_floating_point<ValueT>::value
         >
     >
     void remap2d(
@@ -33,7 +33,7 @@ namespace openpiv::interp
         core::image<ContainedT>& out
     ) {
         // EPS accounts for floating point error
-        const double EPS = 1e-4;
+        // const double EPS = 1e-4;
 
         // Get the grid origin and spacing so we can convert to pixel units
         const core::point2<uint32_t> origin = {

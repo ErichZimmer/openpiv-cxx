@@ -26,16 +26,19 @@ namespace openpiv::core {
         DLL_EXPORT size_t num_images() const override;
 
         DLL_EXPORT bool open( std::istream& is ) override;
-        DLL_EXPORT bool extract( size_t index, g16_image& ) override;
-        DLL_EXPORT bool extract( size_t index, gf_image& ) override;
-        DLL_EXPORT bool extract( size_t index, rgba16_image& ) override;
+        DLL_EXPORT bool extract( size_t index, image_g16& ) override;
+        DLL_EXPORT bool extract( size_t index, image_gf32& ) override;
+        DLL_EXPORT bool extract( size_t index, image_gf64& ) override;
+        DLL_EXPORT bool extract( size_t index, image_rgba16& ) override;
 
-        DLL_EXPORT void save( std::ostream&, const g16_image& ) const override;
-        DLL_EXPORT void save( std::ostream&, const gf_image& ) const override;
-        DLL_EXPORT void save( std::ostream&, const rgba16_image& ) const override;
-        DLL_EXPORT void save( std::ostream&, const g16_image_view& ) const override;
-        DLL_EXPORT void save( std::ostream&, const gf_image_view& ) const override;
-        DLL_EXPORT void save( std::ostream&, const rgba16_image_view& ) const override;
+        DLL_EXPORT void save( std::ostream&, const image_g16& ) const override;
+        DLL_EXPORT void save( std::ostream&, const image_gf32& ) const override;
+        DLL_EXPORT void save( std::ostream&, const image_gf64& ) const override;
+        DLL_EXPORT void save( std::ostream&, const image_rgba16& ) const override;
+        DLL_EXPORT void save( std::ostream&, const image_view_g16& ) const override;
+        DLL_EXPORT void save( std::ostream&, const image_view_gf32& ) const override;
+        DLL_EXPORT void save( std::ostream&, const image_view_gf64& ) const override;
+        DLL_EXPORT void save( std::ostream&, const image_view_rgba16& ) const override;
 
     private:
         struct impl;

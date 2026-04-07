@@ -303,6 +303,7 @@ pixel_sum( const ImageT<ContainedT>& im )
     return pixel_sum_impl<ImageT, ContainedT, double>(im);
 }
 
+
 /// split an RGBA image into channels
 template < template<typename> class ImageT,
            typename T,

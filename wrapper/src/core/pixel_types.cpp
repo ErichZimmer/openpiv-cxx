@@ -176,6 +176,6 @@ bool add_g_types(py::module& m)
 
 void add_pixel_types(py::module& m)
 {
-    add_g_types<uint8_t, uint16_t, uint32_t, double>(m);
+    add_g_types<uint8_t, uint16_t, uint32_t, float, double>(m);
 }
 

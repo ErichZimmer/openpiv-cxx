@@ -23,7 +23,7 @@ using namespace openpiv;
 
 void add_piv_firstpass(py::module& m)
 {
-    using ImageT = core::image_gf64;
+    using ImageT = core::image_gf32;
 
      m.def("process_images_standard",
           [](ImageT image_a, 
@@ -66,7 +66,7 @@ void add_piv_firstpass(py::module& m)
 
 void add_piv_multipass(py::module& m)
 {
-    using ImageT = core::image_gf64;
+    using ImageT = core::image_gf32;
 
      m.def("process_images_multipass",
           [](const ImageT image_a, 

@@ -25,8 +25,18 @@ namespace openpiv::algos {
     /// A basic decimate-in-time FFT algorithm; not highly optimized.
     ///
     /// This class is thread-safe
+    template <typename T>
     class FFT
     {
+        static_assert(
+            std::is_same_v<T, double>,
+            "FFT only supports double (image_gf64)"
+        );
+
+        using value_t = double;
+        using image_cf_t = core::image< core::complex< value_t > >;   // complex image of T
+        using image_gf_t = core::image< core::g< value_t > >;  // real image of T
+
         const size size_;
 
         /// contains "twiddle factors" for each n: 2^n < N, n>=0
@@ -37,9 +47,9 @@ namespace openpiv::algos {
         /// storage for intermediate data
         struct data_t
         {
-            cf_image output;
+            image_cf_t output;
             std::vector< c_f > fft_buffer;
-            cf_image temp;
+            image_cf_t temp;
         };
 
         /// helpers to allow TLS for intermediate storage
@@ -88,7 +98,7 @@ namespace openpiv::algos {
                    typename ContainedT,
                    typename = typename std::enable_if_t< is_imagetype_v<ImageT<ContainedT>> >
                    >
-        const cf_image& transform( const ImageT<ContainedT>& input, direction d = direction::FORWARD ) const
+        const image_cf_t& transform( const ImageT<ContainedT>& input, direction d = direction::FORWARD ) const
         {
             DECLARE_ENTRY_EXIT
             if ( input.size() != size_ )
@@ -127,7 +137,7 @@ namespace openpiv::algos {
                        is_real_mono_pixeltype_v<ContainedT>
                        >
                    >
-        std::tuple<cf_image, cf_image>
+        std::tuple<image_cf_t, image_cf_t>
         transform_real( const ImageT<ContainedT>& a,
                         const ImageT<ContainedT>& b,
                         direction d = direction::FORWARD ) const
@@ -160,8 +170,8 @@ namespace openpiv::algos {
 
             // and unravel
             const auto& transformed = cache().output;
-            auto out_a = cf_image( transformed.size() );
-            auto out_b = cf_image( transformed.size() );
+            auto out_a = image_cf_t( transformed.size() );
+            auto out_b = image_cf_t( transformed.size() );
 
             const auto width = transformed.width();
             const auto height = transformed.height();
@@ -195,8 +205,8 @@ namespace openpiv::algos {
         cross_correlate( const ImageT<ContainedT>& a,
                          const ImageT<ContainedT>& b ) const
         {
-            cf_image a_fft{ transform( a, direction::FORWARD ) };
-            const cf_image& b_fft = transform( b, direction::FORWARD );
+            image_cf_t a_fft{ transform( a, direction::FORWARD ) };
+            const image_cf_t& b_fft = transform( b, direction::FORWARD );
 
             a_fft = b_fft * conj( a_fft );
             OutT output{ real( transform( a_fft, direction::REVERSE ) ) };
@@ -230,9 +240,9 @@ namespace openpiv::algos {
                    typename ContainedT,
                    typename = typename std::enable_if_t< is_imagetype_v<ImageT<ContainedT>> >
                    >
-        const cf_image& auto_correlate( const ImageT<ContainedT>& a ) const
+        const image_cf_t& auto_correlate( const ImageT<ContainedT>& a ) const
         {
-            cf_image a_fft{ transform( a, direction::FORWARD ) };
+            image_cf_t a_fft{ transform( a, direction::FORWARD ) };
 
             a_fft = abs_sqr( a_fft );
             cache().output = real( transform( a_fft, direction::REVERSE ) );
