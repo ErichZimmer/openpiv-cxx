@@ -281,15 +281,15 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
     * [ ] use SIMD?
   * image deformation
     * [x] shifted linear image deformation interpolation (same as first degree polynomial for my impl)
-    * [ ] polynomial interpolation (lookup tables-based, so super fast!!)
-    * [ ] sinc (lookup table-based, so also quite fast; only 7x7 and 11x11 kernels supported)
-    * [ ] lanczos (lookup table-based, so also quite fast; generally more stable than sinc)
+    * [x] polynomial interpolation (lookup tables-based, so super fast!!)
+    * [x] sinc (lookup table-based, so also quite fast; only 7x7 and 11x11 kernels supported)
+    * [x] lanczos (lookup table-based, so also quite fast; generally more stable than sinc)
   * [x] peak detection
   * peak fitting
     * [x] 3 point Gaussian peak fit
     * [x] 3 point parabolic peak fit
     * [x] 3 point centroid peak fit
-    * [x] 3x3 closed form solution
+    * [x] 3x3 Gaussian closed form solution
     * [ ] nxn least squares Gaussian peak fit (optimized via pseudo-inverse)
     * [ ] nxn non-linear Gaussian peak fit (optimized via Levenberg-Marquardt or something similar)
     * [ ] nxn centroid peak fit (can be used for calibration marker detection)

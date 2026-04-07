@@ -13,6 +13,7 @@ void add_piv_method(py::module& m)
 {
     py::enum_<openpiv::piv::deform_method>(m, "deform_method")
         .value("SINC", piv::deform_method::SINC)
+        .value("LANCZOS", piv::deform_method::LANCZOS)
         .value("LAGRANGE", piv::deform_method::LAGRANGE)
         .export_values();
 }

@@ -5,7 +5,8 @@ namespace openpiv::piv {
 
     enum class deform_method {
         SINC,
-        LAGRANGE
+        LAGRANGE,
+        LANCZOS
     };
 
     enum class deform_order {

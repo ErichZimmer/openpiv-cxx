@@ -15,6 +15,7 @@
 
 #include "interp/map_polynomial.h"
 #include "interp/map_sinc.h"
+#include "interp/map_lanczos.h"
 
 #include "piv/piv_common.h"
 
@@ -237,6 +238,18 @@ namespace openpiv::piv
                     threads
                 );
             }
+
+            else if (method == deform_method::LANCZOS)
+            {
+                interp::lanczos_interp2d<core::image, ContainedT>(
+                    frame_b,
+                    deform_forward,
+                    frame_b_deform,
+                    k,
+                    threads
+                );
+            }
+
             else
             {
                 interp::sinc_interp2d<core::image, ContainedT>(
@@ -274,6 +287,26 @@ namespace openpiv::piv
                     threads
                 );
             }
+
+            else if (method == deform_method::LANCZOS)
+            {
+                interp::lanczos_interp2d<core::image, ContainedT>(
+                    frame_a,
+                    deform_backward,
+                    frame_a_deform,
+                    k,
+                    threads
+                );
+
+                interp::lanczos_interp2d<core::image, ContainedT>(
+                    frame_b,
+                    deform_forward,
+                    frame_b_deform,
+                    k,
+                    threads
+                );
+            }
+
             else
             {
                 interp::sinc_interp2d<core::image, ContainedT>(

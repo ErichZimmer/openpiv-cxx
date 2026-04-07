@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cmath>
 #include <type_traits>
 #include <thread>
 
@@ -18,7 +19,6 @@ namespace openpiv::interp
 {
     using namespace openpiv::core;
     
-    // TODO: optimize using lookup tables (LUT) descritized to 256 with linear interp
     double sinc_weighting(double x);
 
 
@@ -36,6 +36,10 @@ namespace openpiv::interp
         int32_t threads
     )
     {
+        // Make sure kernel size is supported
+        if ( !((kernel_half_size == 3) || (kernel_half_size == 5)) )
+            core::exception_builder<std::runtime_error>() << "kernel_half_size must be either 3 or 5";
+
         // Setup thread counts - 1 =  no threading; 0 = auto-select thread count; >1 = manually select thread count
         uint32_t thread_count = std::thread::hardware_concurrency()-1;
         if ((threads > 0) && (static_cast<uint32_t>(threads) < thread_count))
@@ -44,40 +48,71 @@ namespace openpiv::interp
         const uint32_t src_width  = src.width();
         const uint32_t src_height = src.height();
 
+        const int32_t kernel_full_size = 2*kernel_half_size + 1;
+
+        // Precompute Sinc weights
+        auto weighting_func = [kernel_half_size](double r) -> std::vector<double>
+        {
+            const int32_t k = 2*kernel_half_size + 1;
+
+            std::vector<double> w;
+            w.reserve(k);
+
+            // integer-centered nodes: -kernel_half_size to kernel_half_size-1
+            for (int32_t n = -kernel_half_size; n <= kernel_half_size; ++n) {
+                double x = static_cast<double>(n) - r;
+                w.push_back(sinc_weighting(x));
+            }
+
+            return w;
+        };
+
+        double r_min = static_cast<double>(-kernel_half_size);
+        double r_max = static_cast<double>(kernel_half_size);
+        size_t steps = 512u;
+
+        const lut_v weights_table = make_lut(
+            weighting_func,
+            steps,
+            r_min,
+            r_max
+        );
+
         out.resize(mappings.size());
 
-        auto processor = [&src, &mappings, &out, src_width, src_height, kernel_half_size]( uint32_t ind )
+        auto processor = [&src, &mappings, &out, &weights_table, src_width, src_height, kernel_half_size, kernel_full_size]( uint32_t ind )
         {
             const uint32_t x = (ind % mappings.width());
             const uint32_t y = (ind / mappings.width());
 
             const auto& point_xy = mappings[{x,y}];
 
-            const double bx = point_xy[0];
-            const double by = point_xy[1];
+            const double grid_coord_x = point_xy[0];
+            const double grid_coord_y = point_xy[1];
 
-            const int32_t xn = static_cast<int>(bx);
-            const int32_t yn = static_cast<int>(by);
+            const int32_t cell_ix = static_cast<int32_t>(std::floor(grid_coord_x));
+            const int32_t cell_iy = static_cast<int32_t>(std::floor(grid_coord_y));
+
+            // fractional offsets in [0,1)
+            const double offset_x = grid_coord_x - static_cast<double>(cell_ix);
+            const double offset_y = grid_coord_y - static_cast<double>(cell_iy);
+
+            const auto wx = get_weights(offset_x, weights_table);
+            const auto wy = get_weights(offset_y, weights_table);
 
             double value = 0.0;
 
-            for (int32_t j = yn - kernel_half_size; j <= yn + kernel_half_size; ++j)
+            for (int32_t j = 0; j < kernel_full_size; ++j)
             {
-                const size_t jj = mirror_index(j, src_height);
-
-                const double dy = j - by;
-                const double sy = sinc_weighting(dy);
+                const size_t jj = mirror_index(cell_iy - kernel_half_size + j, src_height);
 
                 const ContainedT* row = src.line(jj);
 
-                for (int32_t i = xn - kernel_half_size; i <= xn + kernel_half_size; ++i)
+                for (int32_t i = 0; i < kernel_full_size; ++i)
                 {
-                    const size_t ii = mirror_index(i, src_width);
+                    const size_t ii = mirror_index(cell_ix - kernel_half_size + i, src_width);
 
-                    const double dx = i - bx;
-                    const double sx = sinc_weighting(dx);
-
-                    value += static_cast<double>(row[ii]) * sx * sy;
+                    value += static_cast<double>(row[ii]) * wx[i] * wy[j];
                 }
             }
 

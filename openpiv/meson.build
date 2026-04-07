@@ -7,6 +7,7 @@ openpiv_src = [
     'interp/detail/interp_common.impl.cpp',
     'interp/detail/map_polynomial.impl.cpp',
     'interp/detail/map_sinc.impl.cpp',
+    'interp/detail/map_lanczos.impl.cpp',
     'piv/detail/deformation.impl.cpp',
     'piv/detail/firstpass.impl.cpp',
     'piv/detail/multipass.impl.cpp',

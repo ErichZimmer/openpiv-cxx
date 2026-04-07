@@ -1,18 +1,16 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 #include <cmath>
 #include <type_traits>
 #include <thread>
 
 #include "threadpool.hpp"
 
+#include "core/vector_field.h"
 #include "core/image.h"
 #include "core/image_type_traits.h"
 #include "core/pixel_types.h"
-#include "core/vector_field.h"
-#include "core/exception_builder.h"
 
 #include "interp_common.impl.h"
 
@@ -20,8 +18,8 @@
 namespace openpiv::interp
 {
     using namespace openpiv::core;
-
-    std::vector<double> poly_weights(double r, int32_t k);
+    
+    double lanczos_weighting(double x, int32_t a);
 
 
     template <
@@ -30,7 +28,7 @@ namespace openpiv::interp
         typename,
         typename
     >
-    void lagrange_interp2d(
+    void lanczos_interp2d(
         const core::image<ContainedT>& src,
         const core::grid_coords& mappings,
         core::image<ContainedT>& out,
@@ -39,8 +37,8 @@ namespace openpiv::interp
     )
     {
         // Make sure kernel size is supported
-        if ( !(0 < kernel_half_size < 6) )
-            core::exception_builder<std::runtime_error>() << "kernel_half_size must be between 1 and 5";
+        if ( !((kernel_half_size == 3) || (kernel_half_size == 5)) )
+            core::exception_builder<std::runtime_error>() << "kernel_half_size must be either 3 or 5";
 
         // Setup thread counts - 1 =  no threading; 0 = auto-select thread count; >1 = manually select thread count
         uint32_t thread_count = std::thread::hardware_concurrency()-1;
@@ -49,17 +47,28 @@ namespace openpiv::interp
 
         const uint32_t src_width  = src.width();
         const uint32_t src_height = src.height();
-        
-        const int32_t kernel_full_size = 2 * kernel_half_size;
 
-        // Precompute Lagrange weights
+        const int32_t kernel_full_size = 2*kernel_half_size + 1;
+
+        // Precompute Lanczos weights
         auto weighting_func = [kernel_half_size](double r) -> std::vector<double>
         {
-            return poly_weights(r, kernel_half_size);
+            const int32_t k = 2*kernel_half_size + 1;
+
+            std::vector<double> w;
+            w.reserve(k);
+
+            // integer-centered nodes: -kernel_half_size to kernel_half_size-1
+            for (int32_t n = -kernel_half_size; n <= kernel_half_size; ++n) {
+                double x = static_cast<double>(n) - r;
+                w.push_back(lanczos_weighting(x, kernel_half_size));
+            }
+
+            return w;
         };
 
-        double r_min = -0.5;
-        double r_max = 0.5;
+        double r_min = static_cast<double>(-kernel_half_size);
+        double r_max = static_cast<double>(kernel_half_size);
         size_t steps = 512u;
 
         const lut_v weights_table = make_lut(
@@ -78,29 +87,30 @@ namespace openpiv::interp
 
             const auto& point_xy = mappings[{x,y}];
 
-            double grid_coord_x = point_xy[0];
-            double grid_coord_y = point_xy[1];
+            const double grid_coord_x = point_xy[0];
+            const double grid_coord_y = point_xy[1];
 
-            double cell_ix = std::floor(grid_coord_x);
-            double cell_iy = std::floor(grid_coord_y);
+            const int32_t cell_ix = static_cast<int32_t>(std::floor(grid_coord_x));
+            const int32_t cell_iy = static_cast<int32_t>(std::floor(grid_coord_y));
 
-            double centered_offset_x = grid_coord_x - (cell_ix + 0.5);
-            double centered_offset_y = grid_coord_y - (cell_iy + 0.5);
+            // fractional offsets in [0,1)
+            const double offset_x = grid_coord_x - static_cast<double>(cell_ix);
+            const double offset_y = grid_coord_y - static_cast<double>(cell_iy);
 
-            std::vector<double> wx = get_weights(centered_offset_x, weights_table);
-            std::vector<double> wy = get_weights(centered_offset_y, weights_table);
+            const auto wx = get_weights(offset_x, weights_table);
+            const auto wy = get_weights(offset_y, weights_table);
 
             double value = 0.0;
 
             for (int32_t j = 0; j < kernel_full_size; ++j)
             {
-                const size_t jj = mirror_index(cell_iy - kernel_half_size + 1 + j, src_height);
+                const size_t jj = mirror_index(cell_iy - kernel_half_size + j, src_height);
 
                 const ContainedT* row = src.line(jj);
 
                 for (int32_t i = 0; i < kernel_full_size; ++i)
                 {
-                    const size_t ii = mirror_index(cell_ix - kernel_half_size + 1 + i, src_width);
+                    const size_t ii = mirror_index(cell_ix - kernel_half_size + i, src_width);
 
                     value += static_cast<double>(row[ii]) * wx[i] * wy[j];
                 }
@@ -108,7 +118,7 @@ namespace openpiv::interp
 
             out[{x,y}] = static_cast<ContainedT>(value);
         };
-    
+
         // check execution
         if (thread_count <= 1)
         {

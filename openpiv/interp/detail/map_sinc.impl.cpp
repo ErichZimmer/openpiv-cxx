@@ -1,11 +1,10 @@
 #include "map_sinc.impl.h"
 
-#include <cstdlib>
-
+#include <cstdint>
+#include <cmath>
 
 namespace openpiv::interp
 {
-    // TODO: optimize using lookup tables (LUT) descritized to 256 with linear interp
     double sinc_weighting(double x)
     {
         if (x == 0.0)
