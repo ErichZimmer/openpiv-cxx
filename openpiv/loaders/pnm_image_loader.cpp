@@ -391,7 +391,7 @@ namespace openpiv::core {
         for ( uint32_t h=0; h<im.height(); ++h )
         {
             g_16* bp = &buffer[0];
-            const g_f* ip = im.line(h);
+            const g_f32* ip = im.line(h);
             for ( uint32_t w=0; w<im.width(); ++w )
                 *bp++ = stobe<__BYTE_ORDER__>( static_cast< uint16_t >( g_16::max() * ((*ip++ - min)/range) ) );
 
@@ -436,7 +436,7 @@ namespace openpiv::core {
         for ( uint32_t h=0; h<im.height(); ++h )
         {
             g_16* bp = &buffer[0];
-            const g_f* ip = im.line(h);
+            const g_f64* ip = im.line(h);
             for ( uint32_t w=0; w<im.width(); ++w )
                 *bp++ = stobe<__BYTE_ORDER__>( static_cast< uint16_t >( g_16::max() * ((*ip++ - min)/range) ) );
 

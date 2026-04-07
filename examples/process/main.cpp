@@ -199,7 +199,7 @@ int main( int argc, char* argv[] )
                          constexpr uint16_t num_peaks = 2;
                          constexpr uint16_t radius = 1;
 
-                         core::peaks_t<core::g_f64> peaks;
+                         core::peaks_t<core::g_f> peaks;
 
                          if (limit_search)
                          {
