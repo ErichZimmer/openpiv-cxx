@@ -100,6 +100,122 @@ result_t fit_simple_gaussian( const ImageT<ContainedT>& im )
     return result;
 }
 
+/// Fit 3x3 two-dimensional Gaussian curves to a peak
+template < template<typename> class ImageT,
+           typename ContainedT,
+           typename result_t = point2<double>
+           >
+result_t fit_3x3_gaussian( const ImageT<ContainedT>& im )
+{
+    if ( im.size() != size{3, 3} )
+        exception_builder<std::runtime_error>() << "fit_3x3_gaussian: input must be 3x3";
+
+    // Accumulated weights
+    double c10 = 0.0;
+    double c01 = 0.0;
+    double c11 = 0.0;
+    double c20 = 0.0;
+    double c02 = 0.0;
+
+    // Closed form solution to 2D least squares solution
+    for (int32_t i = -1; i < 2; i++)
+    {
+        for (int32_t j = -1; j < 2; j++)
+        {
+            double v = static_cast<double>(im[{i+1,j+1}]);
+
+            // small offset in case of zero
+            if (v == 0.0)
+                v = 1e-6;
+
+            double L = log(v);
+
+            c10 += i * L;
+            c01 += j * L;
+            c11 += (i * j) * L;
+            c20 += (3 * (i * i) - 2) * L;
+            c02 += (3 * (j * j) - 2) * L;
+        }
+    }
+
+    c10 *= (1.0 / 6.0);
+    c01 *= (1.0 / 6.0);
+    c11 *= (1.0 / 4.0);
+    c20 *= (1.0 / 6.0);
+    c02 *= (1.0 / 6.0);
+
+    double denom = (4.0 * c20 * c02 - c11 * c11);
+    double dx = 0.0;
+    double dy = 0.0;
+
+    // Compute offsets as long as denom is not zero // avoid divide by zero
+    if (denom != 0.0)
+    {
+        dx = (c11 * c01 - 2.0 * c10 * c02) / denom;
+        dy = (c11 * c10 - 2.0 * c01 * c20) / denom;
+    }
+
+    result_t result{ im.rect().midpoint() };
+    result[0] += dx;
+    result[1] += dy;
+
+    return result;
+}
+
+// Fit two one-dimensional centroid curves to a peak
+template < template<typename> class ImageT,
+           typename ContainedT,
+           typename result_t = point2<double>
+           >
+result_t fit_simple_centroid( const ImageT<ContainedT>& im )
+{
+    if ( im.size() != size{3, 3} )
+        exception_builder<std::runtime_error>() << "fit_simple_centroid: input must be 3x3";
+
+    auto f = []( auto l, auto c, auto r ) {
+                 double num = -l + r;
+                 double den = l + c + r;
+
+                 if ( den == 0.0 )
+                     return 0.0;
+
+                 return num/den;
+             };
+
+    result_t result{ im.rect().midpoint() };
+    result[0] += f(im[{0, 1}], im[{1, 1}], im[{2, 1}]);
+    result[1] += f(im[{1, 0}], im[{1, 1}], im[{1, 2}]);
+
+    return result;
+}
+
+// Fit two one-dimensional parabolic curves to a peak
+template < template<typename> class ImageT,
+           typename ContainedT,
+           typename result_t = point2<double>
+           >
+result_t fit_simple_parabolic( const ImageT<ContainedT>& im )
+{
+    if ( im.size() != size{3, 3} )
+        exception_builder<std::runtime_error>() << "fit_simple_parabolic: input must be 3x3";
+
+    auto f = []( auto l, auto c, auto r ) {
+                 double num = l - r;
+                 double den = 2*l - 4*c + 2*r;
+
+                 if ( den == 0.0 )
+                     return 0.0;
+
+                 return num/den;
+             };
+
+    result_t result{ im.rect().midpoint() };
+    result[0] += f(im[{0, 1}], im[{1, 1}], im[{2, 1}]);
+    result[1] += f(im[{1, 0}], im[{1, 1}], im[{1, 2}]);
+
+    return result;
+}
+
 /// apply a function to each pixel
 template < template<typename> class ImageT,
            typename ContainedT,
@@ -186,6 +302,7 @@ pixel_sum( const ImageT<ContainedT>& im )
 {
     return pixel_sum_impl<ImageT, ContainedT, double>(im);
 }
+
 
 /// split an RGBA image into channels
 template < template<typename> class ImageT,

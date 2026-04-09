@@ -39,9 +39,9 @@ namespace {
 
     // 8-bit greyscale to 16-bit greyscale
     template <>
-    g16_image copy<g_16, planar_config::CONTIG, sample_format::UINT, 1, 8>(TIFF* tiff, uint32_t width, uint32_t height)
+    image_g16 copy<g_16, planar_config::CONTIG, sample_format::UINT, 1, 8>(TIFF* tiff, uint32_t width, uint32_t height)
     {
-        g16_image im(width, height, 0);
+        image_g16 im(width, height, 0);
 
         // allocate line buffer
         size_t bytesPerLine = TIFFScanlineSize( tiff );
@@ -63,9 +63,9 @@ namespace {
 
     // 16-bit greyscale to 16-bit greyscale
     template <>
-    g16_image copy<g_16, planar_config::CONTIG, sample_format::UINT, 1, 16>(TIFF* tiff, uint32_t width, uint32_t height)
+    image_g16 copy<g_16, planar_config::CONTIG, sample_format::UINT, 1, 16>(TIFF* tiff, uint32_t width, uint32_t height)
     {
-        g16_image im(width, height, 0);
+        image_g16 im(width, height, 0);
 
         // copy the data
         for (uint32_t h=0; h<height; ++h)
@@ -79,9 +79,9 @@ namespace {
 
     // 16-bit RGB to 16-bit RGBA
     template <>
-    rgba16_image copy<rgba_16, planar_config::CONTIG, sample_format::UINT, 3, 16>(TIFF* tiff, uint32_t width, uint32_t height)
+    image_rgba16 copy<rgba_16, planar_config::CONTIG, sample_format::UINT, 3, 16>(TIFF* tiff, uint32_t width, uint32_t height)
     {
-        rgba16_image im(width, height, 0);
+        image_rgba16 im(width, height, 0);
 
         // allocate line buffer
         size_t bytesPerLine = TIFFScanlineSize( tiff );
@@ -107,9 +107,9 @@ namespace {
 
     // 8-bit RGB to 16-bit RGBA
     template <>
-    rgba16_image copy<rgba_16, planar_config::CONTIG, sample_format::UINT, 3, 8>(TIFF* tiff, uint32_t width, uint32_t height)
+    image_rgba16 copy<rgba_16, planar_config::CONTIG, sample_format::UINT, 3, 8>(TIFF* tiff, uint32_t width, uint32_t height)
     {
-        rgba16_image im(width, height, 0);
+        image_rgba16 im(width, height, 0);
 
         // allocate line buffer
         size_t bytesPerLine = TIFFScanlineSize( tiff );
@@ -302,47 +302,62 @@ namespace openpiv::core {
         return impl_->open();
     }
 
-    bool tiff_image_loader::extract( size_t index, g16_image& im )
+    bool tiff_image_loader::extract( size_t index, image_g16& im )
     {
         return impl_->extract( index, im );
     }
 
-    bool tiff_image_loader::extract( size_t index, gf_image& im )
+    bool tiff_image_loader::extract( size_t index, image_gf32& im )
     {
         return impl_->extract( index, im );
     }
 
-    bool tiff_image_loader::extract( size_t index, rgba16_image& im )
+    bool tiff_image_loader::extract( size_t index, image_gf64& im )
     {
         return impl_->extract( index, im );
     }
 
-    void tiff_image_loader::save( std::ostream&, const g16_image& ) const
+    bool tiff_image_loader::extract( size_t index, image_rgba16& im )
+    {
+        return impl_->extract( index, im );
+    }
+
+    void tiff_image_loader::save( std::ostream&, const image_g16& ) const
     {
         exception_builder<image_loader_exception>() << name() << ": cannot save data";
     }
 
-    void tiff_image_loader::save( std::ostream&, const g16_image_view& ) const
+    void tiff_image_loader::save( std::ostream&, const image_view_g16& ) const
     {
         exception_builder<image_loader_exception>() << name() << ": cannot save data";
     }
 
-    void tiff_image_loader::save( std::ostream&, const gf_image& ) const
+    void tiff_image_loader::save( std::ostream&, const image_gf32& ) const
     {
         exception_builder<image_loader_exception>() << name() << ": cannot save data";
     }
 
-    void tiff_image_loader::save( std::ostream&, const gf_image_view& ) const
+    void tiff_image_loader::save( std::ostream&, const image_view_gf32& ) const
     {
         exception_builder<image_loader_exception>() << name() << ": cannot save data";
     }
 
-    void tiff_image_loader::save( std::ostream&, const rgba16_image& ) const
+    void tiff_image_loader::save( std::ostream&, const image_gf64& ) const
     {
         exception_builder<image_loader_exception>() << name() << ": cannot save data";
     }
 
-    void tiff_image_loader::save( std::ostream&, const rgba16_image_view& ) const
+    void tiff_image_loader::save( std::ostream&, const image_view_gf64& ) const
+    {
+        exception_builder<image_loader_exception>() << name() << ": cannot save data";
+    }
+
+    void tiff_image_loader::save( std::ostream&, const image_rgba16& ) const
+    {
+        exception_builder<image_loader_exception>() << name() << ": cannot save data";
+    }
+
+    void tiff_image_loader::save( std::ostream&, const image_view_rgba16& ) const
     {
         exception_builder<image_loader_exception>() << name() << ": cannot save data";
     }

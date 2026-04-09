@@ -8,8 +8,26 @@
 // openpiv
 #include "core/rect.h"
 #include "core/size.h"
+#include "core/dll_export.h"
 
 namespace openpiv::core {
+    /// generate the field shape of a vector field
+    /// dimensions \a size and a specified \a offset
+    ///
+    /// generate_grid_shape( images_size, size( 32, 32 ), 0.5 )
+    DLL_EXPORT core::size
+    generate_grid_shape( const core::size& image_size,
+                         const core::size& interrogation_size,
+                         double percentage_offset );
+
+    /// generate the field shape of a vector field
+    /// dimensions \a size and a specified \a offset in x and y
+    ///
+    /// generate_grid_shape( images_size, size( 32, 32 ), { 16, 16 } )
+    DLL_EXPORT core::size
+    generate_grid_shape( const core::size& image_size,
+                         const core::size& interrogation_size,
+                         std::array< uint32_t, 2 > offsets );
 
     /// generate a centred cartesian grid of rectangles with
     /// dimensions \a size and a specified \a offset
@@ -22,10 +40,11 @@ namespace openpiv::core {
     ///            (2, 17), (18, 17), (34, 17), (50, 17), (66, 17)]
     /// (66, 1) -> rectangle from (66, 1) -> (98, 33)
     /// (2, 17) -> rectangle from (2, 17) -> (34, 49)
-    std::vector<core::rect>
+    DLL_EXPORT std::vector<core::rect>
     generate_cartesian_grid( const core::size& image_size,
                              const core::size& interrogation_size,
-                             double percentage_offset );
+                             double percentage_offset,
+                             bool centered = true);
 
     /// generate a centred cartesian grid of rectangles with
     /// dimensions \a size and a specified \a offset in x and y
@@ -38,12 +57,13 @@ namespace openpiv::core {
     ///            (2, 17), (18, 17), (34, 17), (50, 17), (66, 17)]
     /// (66, 1) -> rectangle from (66, 1) -> (98, 33)
     /// (2, 17) -> rectangle from (2, 17) -> (34, 49)
-    std::vector<core::rect>
+    DLL_EXPORT std::vector<core::rect>
     generate_cartesian_grid( const core::size& image_size,
                              const core::size& interrogation_size,
-                             std::array< uint32_t, 2 > offsets );
+                             std::array< uint32_t, 2 > offsets,
+                             bool centered = true);
 
 } // end of namespace
 
 
-#include "core/detail/grid.impl.h"
+//#include "core/detail/grid.impl.h"
