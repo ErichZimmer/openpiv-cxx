@@ -8,6 +8,7 @@
 
 #include "piv/firstpass.h"
 #include "piv/multipass.h"
+#include "piv/correlation_utils.h"
 #include "piv/piv_common.h"
 
 // pybind
@@ -23,11 +24,9 @@ using namespace openpiv;
 
 void add_piv_firstpass(py::module& m)
 {
-    using ImageT = core::image_gf32;
-
      m.def("process_images_standard",
-          [](ImageT image_a, 
-             ImageT image_b,
+          [](const piv::ImageT& image_a, 
+             const piv::ImageT& image_b,
              std::array<uint32_t,2> window_size,
              std::array<uint32_t,2> overlap_size,
              bool step,
@@ -69,8 +68,8 @@ void add_piv_multipass(py::module& m)
     using ImageT = core::image_gf32;
 
      m.def("process_images_multipass",
-          [](const ImageT image_a, 
-             const ImageT image_b,
+          [](const piv::ImageT& image_a, 
+             const piv::ImageT& image_b,
              const core::grid_coords& old_coords,
              const core::grid_data&   old_data,
              std::array<uint32_t, 2> window_size,

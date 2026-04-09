@@ -300,9 +300,9 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
 * image processing
   * filters
     * [ ] change image_view to use array of pointers for each row?
-    * [ ] Gaussian low-pass filter
-    * [ ] Gaussian high-pass filter
-    * [ ] normalized variance filter
+    * [x] Gaussian low-pass filter
+    * [x] Gaussian high-pass filter
+    * [x] normalized variance filter
     * [ ] contrast stretch filter (based on local percentile kernels)
     * [ ] median filter
     * [ ] min/max normalization filter

@@ -1,4 +1,4 @@
-from .pyopenpivcore import process_images_standard, image_g_f64
+from .pyopenpivcore import process_images_standard, image_g_f32
 
 def first_pass(
     image_a,
@@ -9,15 +9,15 @@ def first_pass(
     centered=False,
     threads=1
 ):  
-    if not isinstance(image_a, image_g_f64):
+    if not isinstance(image_a, image_g_f32):
         image_a_temp = image_a.copy()
-        image_a = image_g_f64(list(image_a_temp.shape[::-1]))
+        image_a = image_g_f32(list(image_a_temp.shape[::-1]))
         image_a_buf = np.array(image_a, copy=False)
         image_a_buf[:] = image_a_temp
 
-    if not isinstance(image_b, image_g_f64):
+    if not isinstance(image_b, image_g_f32):
         image_b_temp = image_b.copy()
-        image_b = image_g_f64(list(image_b_temp.shape[::-1]))
+        image_b = image_g_f32(list(image_b_temp.shape[::-1]))
         image_b_buf = np.array(image_b, copy=False)
         image_b_buf[:] = image_b_temp
 

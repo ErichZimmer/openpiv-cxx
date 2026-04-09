@@ -8,6 +8,9 @@ sources = [
     'core/pixel_types.cpp',
     'core/image.cpp',
     'core/vector_field.cpp',
+    'filter/gaussian_lowpass.cpp',
+    'filter/gaussian_highpass.cpp',
+    'filter/gaussian_variance.cpp',
     'piv/evaluation_standard.cpp',
     'piv/piv_enums.cpp',
     'module/module.cpp'

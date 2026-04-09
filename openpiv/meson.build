@@ -4,6 +4,7 @@ openpiv_src = [
     'core/util.cpp',
     'core/detail/grid.impl.cpp',
     'loaders/image_loader.cpp',
+    'filters/detail/filter_common.impl.cpp',
     'interp/detail/interp_common.impl.cpp',
     'interp/detail/map_polynomial.impl.cpp',
     'interp/detail/map_sinc.impl.cpp',

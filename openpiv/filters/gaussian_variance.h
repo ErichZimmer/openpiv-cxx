@@ -1,22 +1,27 @@
 #pragma once
 
+#include <algorithm>
 #include <type_traits>
 
 #include "core/image.h"
 #include "core/image_type_traits.h"
+#include "core/image_utils.h"
 #include "core/pixel_types.h"
 #include "core/vector_field.h"
+
+#include "filters/gaussian_lowpass.h"
 
 
 namespace openpiv::filter {
     using namespace openpiv::core;
 
     /**
-     * @brief Perform a highpass filter using a Gaussian kernel.
+     * @brief Perform a variance filter based on difference of two Gaussian kernels.
      * 
      * @param src The input image to filter.
      * @param out The output of the filtered image.
-     * @param sigma The standard deviation of the Gaussian kernel.
+     * @param sigma1 The standard deviation of the first Gaussian kernel.
+     * @param sigma2 The standard deviation of the second Gaussian kernel.
      * @param truncate The cutoff for the gaussian kernel (radius = sigma * truncate).
      * @param clip Clip negative pixel intensities to zero.
      * @return void.
@@ -34,19 +39,22 @@ namespace openpiv::filter {
             std::is_floating_point_v<ValueT>
         >
     >
-    void gaussian_highpass(
+    void gaussian_variance(
         const ImageT<ContainedT>& src,
         ImageT<ContainedT>& out,
-        ValueT sigma,
+        ValueT sigma1,
+        ValueT sigma2,
         ValueT truncate,
         bool clip
-    );   
+    );
+
 
     /**
-     * @brief Perform a highpass filter using a Gaussian kernel.
+     * @brief Perform a variance filter based on difference of two Gaussian kernels.
      * 
      * @param src The input image to filter.
-     * @param sigma The standard deviation of the Gaussian kernel.
+     * @param sigma1 The standard deviation of the first Gaussian kernel.
+     * @param sigma2 The standard deviation of the second Gaussian kernel.
      * @param truncate The cutoff for the gaussian kernel (radius = sigma * truncate).
      * @param clip Clip negative pixel intensities to zero.
      * @return The output of the filtered image.
@@ -65,9 +73,10 @@ namespace openpiv::filter {
             std::is_floating_point_v<ValueT>
         >
     >
-    ResultT gaussian_highpass(
+    ResultT gaussian_variance(
         const ImageT<ContainedT>& src,
-        ValueT sigma,
+        ValueT sigma1,
+        ValueT sigma2,
         ValueT truncate,
         bool clip
     );
@@ -75,4 +84,4 @@ namespace openpiv::filter {
 } // end of namespace
 
 
-#include "filters/detail/gaussian_highpass.impl.h"
+#include "filters/detail/gaussian_variance.impl.h"
