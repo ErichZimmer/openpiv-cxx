@@ -48,7 +48,7 @@ ReturnT find_peaks( const ImageT<ContainedT>& im, uint16_t num_peaks, uint32_t p
     for ( uint32_t h=peak_radius; h<im.height()-2*peak_radius; ++h )
     {
         const ContainedT* above = im.line( h-1 );
-        const ContainedT* line = im.line( h );
+        const ContainedT* line  = im.line( h );
         const ContainedT* below = im.line( h+1 );
 
         for ( uint32_t w=peak_radius; w<im.width()-peak_radius; ++w )
@@ -70,6 +70,72 @@ ReturnT find_peaks( const ImageT<ContainedT>& im, uint16_t num_peaks, uint32_t p
                } );
     result.resize(std::min(result.size(), (size_t)num_peaks));
 
+    return result;
+}
+
+
+/// Find highest \a num_peaks peaks in an image and return a vector of peaks.
+/// The peaks are returned as \sa image_view and the size of the
+/// image_view can be adjusted by setting \a peak_radius
+template < template<typename> class ImageT,
+           typename ContainedT,
+           typename ReturnT,
+           typename
+           >
+ReturnT find_peaks_brute( const ImageT<ContainedT>& im, uint16_t num_peaks, uint32_t peak_radius ){
+    ReturnT result;
+    const auto result_w = 2*peak_radius + 1;
+    const auto result_h = result_w;
+
+    // Struct to help find local maximas
+    struct is_peak_struct{
+        std::uint32_t h = 0;
+        std::uint32_t w = 0;
+        ContainedT val = 0.0;
+        bool is_peak = false;
+    };
+
+    // Initiate with a high value
+    ContainedT previous_max = ContainedT(999999999999.99);
+    is_peak_struct temp_peak;
+    temp_peak.is_peak = false;
+
+    for (auto i=num_peaks; i>0; --i)
+    {
+        for ( std::uint32_t h=peak_radius; h<im.height()-2*peak_radius; ++h )
+        {
+            const ContainedT* above = im.line( h-1 );
+            const ContainedT* line  = im.line( h );
+            const ContainedT* below = im.line( h+1 );
+
+            for ( std::uint32_t w=peak_radius; w<im.width()-peak_radius; ++w )
+            {
+                if ( line[w-1] < line[w] && line[w+1] < line[w] && above[w] < line[w]  && below[w] < line[w] && // is local peak?
+                     line[w] > temp_peak.val && line[w] < previous_max) // is correct local peak?
+                {
+                    temp_peak.h = h;
+                    temp_peak.w = w;
+                    temp_peak.val = line[w];
+                    temp_peak.is_peak = true;
+                }
+            }
+        }
+
+        if (!temp_peak.is_peak)
+            break;
+        else
+        {
+            auto r = rect( {temp_peak.w - peak_radius, temp_peak.h - peak_radius}, {result_w, result_h} );
+            auto peak = create_image_view(im, r);
+            result.push_back( std::move(peak) );
+
+            previous_max = temp_peak.val;
+            temp_peak.val = ContainedT(0.0);
+            temp_peak.is_peak = false;
+        }
+    }
+
+    // result.resize(num_peaks);
     return result;
 }
 
@@ -110,14 +176,14 @@ result_t fit_3x3_gaussian( const ImageT<ContainedT>& im )
     if ( im.size() != size{3, 3} )
         exception_builder<std::runtime_error>() << "fit_3x3_gaussian: input must be 3x3";
 
-    // Accumulated weights
+    // Accumulated coefficients
     double c10 = 0.0;
     double c01 = 0.0;
     double c11 = 0.0;
     double c20 = 0.0;
     double c02 = 0.0;
 
-    // Closed form solution to 2D least squares solution
+    // Closed form solution to 2D least squares solution (Nobach, 2004)
     for (int32_t i = -1; i < 2; i++)
     {
         for (int32_t j = -1; j < 2; j++)
@@ -138,6 +204,7 @@ result_t fit_3x3_gaussian( const ImageT<ContainedT>& im )
         }
     }
 
+    // Apply weighting from Nobach (2004)
     c10 *= (1.0 / 6.0);
     c01 *= (1.0 / 6.0);
     c11 *= (1.0 / 4.0);
@@ -535,5 +602,15 @@ image<ContainedT> extract( const ImageT<ContainedT>& im, core::rect r )
     return result;
 }
 
+template <typename T>
+T mirror_index(T i, T n)
+{
+    const T period = 2*n - 2;   // reflection period
+    T x = i % period;           // wrap into period
+    x += (x < 0) * period;      // fix negative mod (branchless)
 
+    return n - 1 - std::abs(x - (n - 1));
 }
+
+
+} // end of namespace

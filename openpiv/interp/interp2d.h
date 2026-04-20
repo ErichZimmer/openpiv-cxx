@@ -26,11 +26,13 @@ namespace openpiv::interp
             std::is_floating_point<ValueT>::value
         >
     >
-    void remap2d(
+    void interp2d(
         const core::grid_coords& grid_coords,
         const core::image<ContainedT>& grid_data,
         const core::grid_coords& mappings,
-        core::image<ContainedT>& out
+        core::image<ContainedT>& out,
+        uint32_t k,
+        int32_t threads
     ) {
         // EPS accounts for floating point error
         // const double EPS = 1e-4;
@@ -108,8 +110,8 @@ namespace openpiv::interp
             grid_data,
             mappings_px,
             out,
-            1, // 2x2 interpolation kernel
-            1 // Only use a single thread
+            k,
+            threads
         );
     }
 

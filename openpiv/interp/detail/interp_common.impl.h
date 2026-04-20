@@ -10,8 +10,6 @@ namespace openpiv::interp
 {
    using namespace openpiv::core;
 
-   int32_t mirror_index(int32_t i, int32_t n);
-
    struct lut_v
    {
       std::vector<std::vector<double>> rows;

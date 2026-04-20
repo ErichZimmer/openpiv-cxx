@@ -75,6 +75,7 @@ void add_grid_data(py::module& m)
         .def_readwrite("u", &grid_data::u)
         .def_readwrite("v", &grid_data::v)
         .def_readwrite("s2n", &grid_data::s2n)
+        .def_readwrite("p2p", &grid_data::p2p)
         .def_readwrite("peak", &grid_data::peak);
 }
     

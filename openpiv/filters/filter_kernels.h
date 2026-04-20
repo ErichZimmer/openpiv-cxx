@@ -19,7 +19,7 @@ namespace openpiv::filter {
      * @return void.
      *
      * @note Only floating point data types are allowed.
-     * @note Image borders are handled using a mirror scheme (dcb|abcd|cba).
+     * @note May throw runtime error if kernel size is found to be unrealistic.
      */
      template <
         typename ContainedT,
@@ -32,6 +32,27 @@ namespace openpiv::filter {
     std::vector<ValueT> generate_gaussian_kernel1d(
          ValueT sigma,
          ValueT truncate
+    );
+
+    /**
+     * @brief Generate a 1d Gaussian kernel with fixed width.
+     * 
+     * @param kernel_half_size The redius of the Gaussian kernel.
+     * @return void.
+     *
+     * @note Only floating point data types are allowed.
+     * @note May throw runtime error if kernel size is found to be unrealistic.
+     */
+     template <
+        typename ContainedT,
+        typename ValueT = typename ContainedT::value_t,
+        typename = std::enable_if_t<
+            is_real_mono_pixeltype_v<ContainedT> &&
+            std::is_floating_point_v<ValueT>
+        >
+    >
+    std::vector<ValueT> generate_gaussian_kernel1d(
+         uint32_t kernel_half_size
     );
 
 } // end of namespace

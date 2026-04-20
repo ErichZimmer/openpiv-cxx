@@ -27,6 +27,7 @@ if cxx_compiler != 'msvc'
   _gnu_args = cpp.get_supported_arguments(
     '-ffast-math',
     '-Wno-unknown-pragmas',
+    '-Wall',
     '-mthreads'
   )
   

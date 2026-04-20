@@ -40,7 +40,7 @@ namespace openpiv::filter {
         );
     }   
 
-     template <
+    template <
         template<typename> class ImageT,
         typename ContainedT,
         typename ValueT,
@@ -59,6 +59,53 @@ namespace openpiv::filter {
             out,
             sigma,
             truncate
+        );
+
+        return out;
+    };
+
+    template <
+        template<typename> class ImageT,
+        typename ContainedT,
+        typename ValueT,
+        typename
+    >
+    void gaussian_lowpass(
+        const ImageT<ContainedT>& src,
+        ImageT<ContainedT>& out,
+        uint32_t kernel_half_size
+    ) {
+        auto kernel_x = generate_gaussian_kernel1d<ContainedT>(
+            kernel_half_size
+        );
+
+        auto kernel_y = kernel_x;
+
+        convolve_2d_sep<core::image, ContainedT>(
+            src,
+            out,
+            kernel_x,
+            kernel_y
+        );
+    }   
+
+    template <
+        template<typename> class ImageT,
+        typename ContainedT,
+        typename ValueT,
+        typename ResultT,
+        typename
+    >
+    ResultT gaussian_lowpass(
+        const ImageT<ContainedT>& src,
+        uint32_t kernel_half_size
+    ) {
+        ResultT out{ src.size() };
+
+        gaussian_lowpass<core::image, ContainedT>(
+            src,
+            out,
+            kernel_half_size
         );
 
         return out;

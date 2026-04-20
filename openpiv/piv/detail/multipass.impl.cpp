@@ -24,7 +24,7 @@
 
 #include "threadpool.hpp"
 
-#include "interp/remap.h"
+#include "interp/interp2d.h"
 
 #include "piv/deformation.h"
 #include "piv/firstpass.h"
@@ -54,10 +54,12 @@ namespace openpiv::piv
         int32_t threads
     ) {
         // Don't bother with checks as process image standard takes care of most of them
+        auto overlap_temp = overlap_size;
+
         if (!step)
         {
-            overlap_size[0] = window_size[0] - overlap_size[0];
-            overlap_size[1] = window_size[1] - overlap_size[1];
+            overlap_temp[0] = window_size[0] - overlap_size[0];
+            overlap_temp[1] = window_size[1] - overlap_size[1];
         }
 
         // create a grid for processing
@@ -65,14 +67,14 @@ namespace openpiv::piv
         auto grid = core::generate_cartesian_grid(
             image_b.size(), 
             ia_size, 
-            overlap_size,
+            overlap_temp,
             centered
         );
 
         auto field_shape = core::generate_grid_shape(
             image_b.size(), 
             ia_size, 
-            overlap_size
+            overlap_temp
         );
 
         // Populate field_coords with grid
@@ -84,18 +86,22 @@ namespace openpiv::piv
 
 
         // Interpolate old data onto new grid
-        interp::remap2d<core::image, core::g_f64>(
+        interp::interp2d<core::image, core::g_f64>(
             old_coords,
             old_data.u,
             field_grid,
-            field_data.u
+            field_data.u,
+            1, // Shifted linear interpoaltion
+            1 // Only use a single thread
         );
 
-        interp::remap2d<core::image, core::g_f64>(
+        interp::interp2d<core::image, core::g_f64>(
             old_coords,
             old_data.v,
             field_grid,
-            field_data.v
+            field_data.v,
+            1, // Shifted linear interpoaltion
+            1 // Only use a single thread
         );
 
         // Now deform the images

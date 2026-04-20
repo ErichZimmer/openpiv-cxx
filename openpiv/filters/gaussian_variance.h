@@ -28,6 +28,7 @@ namespace openpiv::filter {
      *
      * @note Only floating point data types are allowed.
      * @note Image borders are handled using a mirror scheme (dcb|abcd|cba).
+     * @note May throw runtime error if kernel size is found to be unrealistic.
      */
      template <
         template<typename> class ImageT,
@@ -61,6 +62,7 @@ namespace openpiv::filter {
      *
      * @note Only floating point data types are allowed.
      * @note Image borders are handled using a mirror scheme (dcb|abcd|cba).
+     * @note May throw runtime error if kernel size is found to be unrealistic.
      */
      template <
         template<typename> class ImageT,

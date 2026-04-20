@@ -111,8 +111,8 @@ namespace openpiv::piv
             &fft_algo,
             &correlator,
             &corr_div,
-            &zero_pad,
-            &limit_search,
+            zero_pad,
+            limit_search,
             &field_coords,
             &field_data
         ]( size_t i, const core::rect& ia)
@@ -174,6 +174,9 @@ namespace openpiv::piv
                 dilation_ratio *= 0.5;
 
             auto valid_corr = core::create_image_view( output, output.rect().dilate(dilation_ratio) );
+
+            // Get mean of valid_corr to calculate s2n ratio
+            auto [corr_mean, corr_std] = algos::find_mean_std(valid_corr);
             
             // find peaks
             // core::peaks_t<core::g_f64> peaks;
@@ -187,21 +190,31 @@ namespace openpiv::piv
             auto midpoint = ia.midpoint();
 
             field_coords[i] = midpoint;
+
             //field_coords[i][1] = image_a.height() - midpoint[1];
 
             // Early escape if not enough peaks were found
             if ( peaks.size() != num_peaks )
             {
+                field_data.u[i]    = grid_data_t(0);
+                field_data.v[i]    = grid_data_t(0);
+                field_data.s2n[i]  = grid_data_t(0);
+                field_data.p2p[i]  = grid_data_t(0);
+                field_data.peak[i] = grid_data_t(0);
+                field_data.flag[i] = static_cast<uint8_t>(FLAG::INVALID);
+
                 return;
             }
 
             // Get subpixel information and add it to vector field data
             auto peak = peaks[0];
             auto peak_location = core::fit_simple_gaussian( peak );
+
             // u and v signs are swapped to match openpiv
             field_data.u[i] = -(midpoint[0] - (bl[0] + peak_location[0] - offset[0]));
             field_data.v[i] = -(midpoint[1] - (bl[1] + peak_location[1] - offset[1]));
-            field_data.s2n[i]  = peaks[0][{1, 1}] / peaks[1][{1, 1}];
+            field_data.s2n[i]  = peaks[0][{1, 1}] / corr_mean;
+            field_data.p2p[i]  = peaks[0][{1, 1}] / peaks[1][{1, 1}];
             field_data.peak[i] = peaks[0][{1, 1}];
         };
 

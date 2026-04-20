@@ -43,7 +43,7 @@ void add_gaussian_highpass(py::module& m)
         py::arg("src"),
         py::arg("out"),
         py::arg("sigma"),
-        py::arg("truncate") = 4.0,
+        py::arg("truncate"),
         py::arg("clip") = true
     );
 
@@ -65,7 +65,46 @@ void add_gaussian_highpass(py::module& m)
 
         py::arg("src"),
         py::arg("sigma"),
-        py::arg("truncate") = 4.0,
+        py::arg("truncate"),
+        py::arg("clip") = true
+    );
+
+    m.def("gaussian_highpass",
+          [](const piv::ImageT& src, 
+             piv::ImageT& out,
+             uint32_t kernel_half_size,
+            bool clip)
+          {
+              filter::gaussian_highpass(
+                src,
+                out,
+                kernel_half_size,
+                clip
+              );
+        },
+
+        py::arg("src"),
+        py::arg("out"),
+        py::arg("kernel_half_size"),
+        py::arg("clip") = true
+    );
+
+    m.def("gaussian_highpass",
+          [](const piv::ImageT& src, 
+             uint32_t kernel_half_size,
+            bool clip) -> piv::ImageT
+          {
+              auto out = filter::gaussian_highpass(
+                src,
+                kernel_half_size,
+                clip
+              );
+
+              return out;
+        },
+
+        py::arg("src"),
+        py::arg("kernel_half_size"),
         py::arg("clip") = true
     );
 }

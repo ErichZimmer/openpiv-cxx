@@ -152,14 +152,16 @@ struct image_type_trait
     static std::vector<size_t> strides(const I<P<U>>& im)
     {
         const auto [column_stride, row_stride] = im.stride();
+        const size_t data_bytes = sizeof(U);
+
         if constexpr (std::is_same_v<P<U>, rgba<U>>)
-            return { row_stride, column_stride, 4 };
+            return { row_stride, column_stride, data_bytes };
         else if constexpr (std::is_same_v<P<U>, yuva<U>>)
-            return { row_stride, column_stride, 4 };
+            return { row_stride, column_stride, data_bytes };
         else if constexpr (std::is_same_v<P<U>, complex<U>>)
-            return { row_stride, column_stride, 2 };
+            return { row_stride, column_stride, data_bytes };
         else if constexpr (std::is_same_v<P<U>, point2<U>>)
-            return { row_stride, column_stride, 2 };
+            return { row_stride, column_stride, data_bytes };
         else
             return { row_stride, column_stride };
     }

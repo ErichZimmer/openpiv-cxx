@@ -10,6 +10,7 @@
 #include "core/vector_field.h"
 #include "core/image.h"
 #include "core/image_type_traits.h"
+#include "core/image_utils.h"
 #include "core/pixel_types.h"
 
 #include "interp_common.impl.h"
@@ -104,13 +105,13 @@ namespace openpiv::interp
 
             for (int32_t j = 0; j < kernel_full_size; ++j)
             {
-                const size_t jj = mirror_index(cell_iy - kernel_half_size + j, src_height);
+                const size_t jj = core::mirror_index<int32_t>(cell_iy - kernel_half_size + j, src_height);
 
                 const ContainedT* row = src.line(jj);
 
                 for (int32_t i = 0; i < kernel_full_size; ++i)
                 {
-                    const size_t ii = mirror_index(cell_ix - kernel_half_size + i, src_width);
+                    const size_t ii = core::mirror_index<int32_t>(cell_ix - kernel_half_size + i, src_width);
 
                     value += static_cast<double>(row[ii]) * wx[i] * wy[j];
                 }

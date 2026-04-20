@@ -10,9 +10,7 @@
 #include "core/image_type_traits.h"
 #include "core/pixel_types.h"
 #include "core/exception_builder.h"
-
-#include "filter_common.impl.h"
-
+#include "core/image_utils.h"
 
 namespace openpiv::filter{
 
@@ -66,7 +64,7 @@ namespace openpiv::filter{
                 int32_t index = j - static_cast<int32_t>(kCenter) + i;
                 
                 // Set the high bounds to max image size since we only care about the left border boundary
-                offsets[i * kSize + j] = mirror_index(index, size_x);
+                offsets[i * kSize + j] = core::mirror_index<int32_t>(index, size_x);
             }
         }
 

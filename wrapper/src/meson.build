@@ -13,6 +13,13 @@ sources = [
     'filter/gaussian_variance.cpp',
     'piv/evaluation_standard.cpp',
     'piv/piv_enums.cpp',
+    'validate/validate_difference.cpp',
+    'validate/validate_median.cpp',
+    'validate/validate_normalized_median.cpp',
+    'validate/validate_peak_ratio.cpp',
+    'validate/validate_range.cpp',
+    'validate/validate_s2n.cpp',
+    'validate/validate_z_score.cpp',
     'module/module.cpp'
 ]
 

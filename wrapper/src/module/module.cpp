@@ -21,6 +21,13 @@ void add_piv_firstpass(py::module &);
 void add_piv_multipass(py::module &);
 void add_piv_method(py::module &);
 void add_piv_order(py::module &);
+void add_validate_difference(py::module &);
+void add_validate_median(py::module &);
+void add_validate_normalized_median(py::module &);
+void add_validate_peak_ratio(py::module &);
+void add_validate_range(py::module &);
+void add_validate_s2n(py::module &);
+void add_validate_z_score(py::module &);
 
 PYBIND11_MODULE(pyopenpivcore, m) {
     m.doc() = R"pbdoc(
@@ -53,6 +60,14 @@ PYBIND11_MODULE(pyopenpivcore, m) {
     add_piv_order(m);
     add_piv_firstpass(m);
     add_piv_multipass(m);
+    add_validate_difference(m);
+    add_validate_median(m);
+    add_validate_normalized_median(m);
+    add_validate_peak_ratio(m);
+    add_validate_range(m);
+    add_validate_s2n(m);
+    add_validate_z_score(m);
+
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

@@ -274,10 +274,9 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
     * [x] use SIMD?
     * [x] real -> complex FFT/correlation of real data
     * [ ] normalized minimum quadratic differences (very robust)
-    * [ ] zero pad images
   * direct correlation
     * [ ] full window correlation
-    * [ ] partial window correlation (for enhancing FFT correlations)
+    * [ ] partial window correlation (e.g., 3x3 correlation for enhancing FFT results)
     * [ ] use SIMD?
   * image deformation
     * [x] shifted linear image deformation interpolation (same as first degree polynomial for my impl)
@@ -315,11 +314,19 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
     * [ ] rotate
     * [ ] flip (x or y axis)
     * [ ] normalize (0..1 * scaling value)
-    * [ ] deform (Using same deformation algos in PIV image deformation)
+    * [ ] dewarp (Using same deformation algos in PIV image deformation)
   * masking
     * [ ] read mask image
     * [ ] write mask image
     * [ ] automatically create mask image
+  * validation
+   * [x] local median
+   * [x] local normalized median
+   * [x] local difference
+   * [x] z_score
+   * [x] u/v range
+   * [x] peak to peak ratio
+   * [x] signal to noise ratio
 * examples
   * [x] parallel cross-correlate
   * [x] image processing
@@ -327,8 +334,8 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
   * [x] cartesian grid generator
   * [ ] further grid generators
   * [ ] median validation with secondary peak check and interpolation
-  * [ ] store signal/noise value
-  * [ ] processing
+  * [x] store signal/noise value
+  * [x] processing
   * [ ] marking
   * [ ] iterative analysis
   * [ ] PIV guided PTV?
@@ -338,4 +345,5 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
   * [ ] gnuplot/pyplot?
   * [ ] tecplot
 * interfacing
+  * [x] pybind11 wrapper for testing
   * [ ] nanobind (faster pybind11) for Python interfacing

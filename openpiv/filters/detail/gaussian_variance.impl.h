@@ -10,6 +10,7 @@
 #include "core/vector_field.h"
 
 #include "filters/gaussian_lowpass.h"
+#include "filters/gaussian_highpass.h"
 
 
 namespace openpiv::filter {
@@ -33,11 +34,12 @@ namespace openpiv::filter {
         core::image<ContainedT> temp1{ src.size() };
         core::image<ContainedT> temp2{ src.size() };
 
-        gaussian_lowpass(
+        gaussian_highpass(
             src,
             temp1,
-            sigma2,
-            truncate
+            sigma1,
+            truncate,
+            false // do not clip at zero
         );
 
         temp2 = temp1 * temp1;
@@ -49,7 +51,7 @@ namespace openpiv::filter {
         gaussian_lowpass(
             temp2,
             out,
-            sigma1,
+            sigma2,
             truncate
         );
 
