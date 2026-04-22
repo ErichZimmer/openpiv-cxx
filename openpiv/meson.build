@@ -38,5 +38,7 @@ openpiv_lib = shared_library(
   include_directories: [openpiv_include, pocketfft_include, threadlib_include],
   dependencies: libopenpivcore_deps,
   cpp_args: cpp_args,
-  install: true
+  install: true,
+#  install_dir: py.get_install_dir() / 'openpiv_cxx'
+
 )

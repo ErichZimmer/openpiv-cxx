@@ -37,5 +37,6 @@ py.extension_module('pyopenpivcore',
         thread_dep
     ],
     link_with: openpiv_lib,
-    install: true
+    install: true,
+    subdir: 'openpiv_cxx'
 )

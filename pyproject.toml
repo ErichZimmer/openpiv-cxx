@@ -1,0 +1,71 @@
+[build-system]
+build-backend = 'mesonpy'
+requires = [
+  "meson>=1.1.0",
+  "meson-python>=0.13.0",
+  "ninja",
+  "wheel",
+  "setuptools",
+  "pip>=23.0"
+]
+
+[project]
+name = "OpenPIV-cxx"
+version = "0.2.1"
+description = "OpenPIV-cxx consists in a Python and c++ modules for to be used with OpenPIV-Python to help accelerate demanding processing pipelines."
+readme = "README.md"
+license = { text = "GPLv3" }
+authors = [
+  { name = "Tim Dewhirst" },
+  { name = "Erich Zimmer" },  
+  { name = "Alex Liberzon" }
+]
+keywords = ["PIV","particle image velocimetry","fluid mechanics"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: POSIX",
+  "Operating System :: Unix",
+  "Operating System :: MacOS",
+
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Natural Language :: English",
+  "Topic :: Scientific/Engineering"
+]
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4.3"]
+
+[tool.meson-python]
+allow-windows-internal-shared-libs = true
+
+[tool.meson-python.args]
+setup = [
+  "-Dbuild_wrapper=true",
+  "-Ddisable_image_loaders=true",
+  "-Dtests=false",
+  "-Ddefault_library=shared"
+]
+install = ['--skip-subprojects=fmt']
+
+[tool.cibuildwheel]
+skip = ["*_i686", "*_ppc64le", "*_s390x", "*_universal2"]
+test-requires = [
+    "pytest"
+]
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+musllinux-x86_64-image = "musllinux_1_2"
+musllinux-aarch64-image = "musllinux_1_2"

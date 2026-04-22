@@ -92,6 +92,9 @@ To get binaries:
 Sometimes you only want the runtime dynamic libraries and executables. Meson comes with a handy targeted installation using the following command:
  * `meson install -C builddir --tags runtime`
 
+For the Python wrapper, use
+ * `meson install -C builddir --tags runtime,python-runtime`
+
 Make sure the prefix, or destdir, is set so binaries are not accidentally installed somewhere unexpected.
 
 The binaries are located in the build or installation directory:

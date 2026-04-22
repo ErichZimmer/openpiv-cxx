@@ -38,6 +38,7 @@ if cxx_compiler != 'msvc'
 endif
 
 # Build configuration
+build_tests = get_option('tests')
 build_wrapper = get_option('build_wrapper')
 disable_image_loaders = get_option('disable_image_loaders')
 
@@ -71,13 +72,6 @@ cxxopts_dep = dependency(
 
 thread_dep = dependency(
   'threads', 
-  required: true
-)
-
-catch2_dep = dependency(
-  'catch2', 
-  fallback: ['catch2', 'catch2_with_main_dep'], 
-  include_type: get_option('deps_include_type'),
   required: true
 )
 
@@ -151,6 +145,8 @@ if get_option('benchmarks').enabled()
     found_benchmark = benchmark_dep.found()
 endif
 
+py = import('python').find_installation(pure: false)
+
 # build the libopenpivcore library
 subdir('openpiv')
 
@@ -163,13 +159,18 @@ openpiv_dep = declare_dependency(
 
 subdir('examples')
 
-py = import('python').find_installation(pure: false)
-
 if build_wrapper
   subdir('wrapper')
 endif
 
-if not meson.is_subproject()
+if build_tests and not meson.is_subproject()
+  catch2_dep = dependency(
+    'catch2', 
+    fallback: ['catch2', 'catch2_with_main_dep'], 
+    include_type: get_option('deps_include_type'),
+    required: true
+  )
+
   subdir('tests')
 endif
 

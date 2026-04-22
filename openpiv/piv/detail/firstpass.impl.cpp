@@ -150,8 +150,8 @@ namespace openpiv::piv
                     ContainerT val_b = (view_b[{i,j}] - view_b_mean) / view_b_std;
 
                     // Clip at zero to prevent cross correlation artifacts
-                    val_a = val_a > 0 ? val_a : ContainerT(0);
-                    val_b = val_b > 0 ? val_b : ContainerT(0);
+                    //val_a = val_a > 0 ? val_a : ContainerT(0);
+                    //val_b = val_b > 0 ? val_b : ContainerT(0);
 
                     iw_a[{i + offset[0], j + offset[1]}] = val_a;
                     iw_b[{i + offset[0], j + offset[1]}] = val_b;

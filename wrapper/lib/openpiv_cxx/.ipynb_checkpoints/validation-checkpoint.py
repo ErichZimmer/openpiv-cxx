@@ -2,7 +2,7 @@ from typing import Tuple
 from .parsing import check_nd, convert_stats_to_grid_data_type, convert_vector_to_grid_data_type
 
 import numpy as np
-import . import pyopenpivcore as cpiv
+from . import pyopenpivcore as cpiv
 
 
 __all__ = [
