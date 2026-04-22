@@ -68,6 +68,19 @@ inline constexpr bool is_pow2( uint64_t v )
 {
     return v && (v == (v&-v));
 }
+
+/// determine if \a v is a multiple of 8
+inline constexpr bool is_mult8( uint64_t v )
+{
+    return v && ((v & 7u) == 0);
+}
+
+/// determine if \a v is a multiple of 16
+inline constexpr bool is_mult16( uint64_t v )
+{
+    return v && ((v & 15u) == 0);
+}
+
 #pragma warning(default: 4146)
 
 /// simple RAII for std::istream multi-char peek; allows caller

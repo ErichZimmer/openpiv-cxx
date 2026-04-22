@@ -48,7 +48,7 @@ ReturnT find_peaks( const ImageT<ContainedT>& im, uint16_t num_peaks, uint32_t p
     for ( uint32_t h=peak_radius; h<im.height()-2*peak_radius; ++h )
     {
         const ContainedT* above = im.line( h-1 );
-        const ContainedT* line = im.line( h );
+        const ContainedT* line  = im.line( h );
         const ContainedT* below = im.line( h+1 );
 
         for ( uint32_t w=peak_radius; w<im.width()-peak_radius; ++w )
@@ -73,6 +73,72 @@ ReturnT find_peaks( const ImageT<ContainedT>& im, uint16_t num_peaks, uint32_t p
     return result;
 }
 
+
+/// Find highest \a num_peaks peaks in an image and return a vector of peaks.
+/// The peaks are returned as \sa image_view and the size of the
+/// image_view can be adjusted by setting \a peak_radius
+template < template<typename> class ImageT,
+           typename ContainedT,
+           typename ReturnT,
+           typename
+           >
+ReturnT find_peaks_brute( const ImageT<ContainedT>& im, uint16_t num_peaks, uint32_t peak_radius ){
+    ReturnT result;
+    const auto result_w = 2*peak_radius + 1;
+    const auto result_h = result_w;
+
+    // Struct to help find local maximas
+    struct is_peak_struct{
+        std::uint32_t h = 0;
+        std::uint32_t w = 0;
+        ContainedT val = 0.0;
+        bool is_peak = false;
+    };
+
+    // Initiate with a high value
+    ContainedT previous_max = ContainedT(999999999999.99);
+    is_peak_struct temp_peak;
+    temp_peak.is_peak = false;
+
+    for (auto i=num_peaks; i>0; --i)
+    {
+        for ( std::uint32_t h=peak_radius; h<im.height()-2*peak_radius; ++h )
+        {
+            const ContainedT* above = im.line( h-1 );
+            const ContainedT* line  = im.line( h );
+            const ContainedT* below = im.line( h+1 );
+
+            for ( std::uint32_t w=peak_radius; w<im.width()-peak_radius; ++w )
+            {
+                if ( line[w-1] < line[w] && line[w+1] < line[w] && above[w] < line[w]  && below[w] < line[w] && // is local peak?
+                     line[w] > temp_peak.val && line[w] < previous_max) // is correct local peak?
+                {
+                    temp_peak.h = h;
+                    temp_peak.w = w;
+                    temp_peak.val = line[w];
+                    temp_peak.is_peak = true;
+                }
+            }
+        }
+
+        if (!temp_peak.is_peak)
+            break;
+        else
+        {
+            auto r = rect( {temp_peak.w - peak_radius, temp_peak.h - peak_radius}, {result_w, result_h} );
+            auto peak = create_image_view(im, r);
+            result.push_back( std::move(peak) );
+
+            previous_max = temp_peak.val;
+            temp_peak.val = ContainedT(0.0);
+            temp_peak.is_peak = false;
+        }
+    }
+
+    // result.resize(num_peaks);
+    return result;
+}
+
 /// Fit two one-dimensional Gaussian curves to a peak
 template < template<typename> class ImageT,
            typename ContainedT,
@@ -86,6 +152,123 @@ result_t fit_simple_gaussian( const ImageT<ContainedT>& im )
     auto f = []( auto l, auto c, auto r ) {
                  double num = log(l) - log(r);
                  double den = 2.0*(log(l) + log(r) - 2.0*log(c));
+
+                 if ( den == 0.0 )
+                     return 0.0;
+
+                 return num/den;
+             };
+
+    result_t result{ im.rect().midpoint() };
+    result[0] += f(im[{0, 1}], im[{1, 1}], im[{2, 1}]);
+    result[1] += f(im[{1, 0}], im[{1, 1}], im[{1, 2}]);
+
+    return result;
+}
+
+/// Fit 3x3 two-dimensional Gaussian curves to a peak
+template < template<typename> class ImageT,
+           typename ContainedT,
+           typename result_t = point2<double>
+           >
+result_t fit_3x3_gaussian( const ImageT<ContainedT>& im )
+{
+    if ( im.size() != size{3, 3} )
+        exception_builder<std::runtime_error>() << "fit_3x3_gaussian: input must be 3x3";
+
+    // Accumulated coefficients
+    double c10 = 0.0;
+    double c01 = 0.0;
+    double c11 = 0.0;
+    double c20 = 0.0;
+    double c02 = 0.0;
+
+    // Closed form solution to 2D least squares solution (Nobach, 2004)
+    for (int32_t i = -1; i < 2; i++)
+    {
+        for (int32_t j = -1; j < 2; j++)
+        {
+            double v = static_cast<double>(im[{i+1,j+1}]);
+
+            // small offset in case of zero
+            if (v == 0.0)
+                v = 1e-6;
+
+            double L = log(v);
+
+            c10 += i * L;
+            c01 += j * L;
+            c11 += (i * j) * L;
+            c20 += (3 * (i * i) - 2) * L;
+            c02 += (3 * (j * j) - 2) * L;
+        }
+    }
+
+    // Apply weighting from Nobach (2004)
+    c10 *= (1.0 / 6.0);
+    c01 *= (1.0 / 6.0);
+    c11 *= (1.0 / 4.0);
+    c20 *= (1.0 / 6.0);
+    c02 *= (1.0 / 6.0);
+
+    double denom = (4.0 * c20 * c02 - c11 * c11);
+    double dx = 0.0;
+    double dy = 0.0;
+
+    // Compute offsets as long as denom is not zero // avoid divide by zero
+    if (denom != 0.0)
+    {
+        dx = (c11 * c01 - 2.0 * c10 * c02) / denom;
+        dy = (c11 * c10 - 2.0 * c01 * c20) / denom;
+    }
+
+    result_t result{ im.rect().midpoint() };
+    result[0] += dx;
+    result[1] += dy;
+
+    return result;
+}
+
+// Fit two one-dimensional centroid curves to a peak
+template < template<typename> class ImageT,
+           typename ContainedT,
+           typename result_t = point2<double>
+           >
+result_t fit_simple_centroid( const ImageT<ContainedT>& im )
+{
+    if ( im.size() != size{3, 3} )
+        exception_builder<std::runtime_error>() << "fit_simple_centroid: input must be 3x3";
+
+    auto f = []( auto l, auto c, auto r ) {
+                 double num = -l + r;
+                 double den = l + c + r;
+
+                 if ( den == 0.0 )
+                     return 0.0;
+
+                 return num/den;
+             };
+
+    result_t result{ im.rect().midpoint() };
+    result[0] += f(im[{0, 1}], im[{1, 1}], im[{2, 1}]);
+    result[1] += f(im[{1, 0}], im[{1, 1}], im[{1, 2}]);
+
+    return result;
+}
+
+// Fit two one-dimensional parabolic curves to a peak
+template < template<typename> class ImageT,
+           typename ContainedT,
+           typename result_t = point2<double>
+           >
+result_t fit_simple_parabolic( const ImageT<ContainedT>& im )
+{
+    if ( im.size() != size{3, 3} )
+        exception_builder<std::runtime_error>() << "fit_simple_parabolic: input must be 3x3";
+
+    auto f = []( auto l, auto c, auto r ) {
+                 double num = l - r;
+                 double den = 2*l - 4*c + 2*r;
 
                  if ( den == 0.0 )
                      return 0.0;
@@ -186,6 +369,7 @@ pixel_sum( const ImageT<ContainedT>& im )
 {
     return pixel_sum_impl<ImageT, ContainedT, double>(im);
 }
+
 
 /// split an RGBA image into channels
 template < template<typename> class ImageT,
@@ -418,5 +602,15 @@ image<ContainedT> extract( const ImageT<ContainedT>& im, core::rect r )
     return result;
 }
 
+template <typename T>
+T mirror_index(T i, T n)
+{
+    const T period = 2*n - 2;   // reflection period
+    T x = i % period;           // wrap into period
+    x += (x < 0) * period;      // fix negative mod (branchless)
 
+    return n - 1 - std::abs(x - (n - 1));
 }
+
+
+} // end of namespace

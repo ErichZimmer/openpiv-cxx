@@ -34,7 +34,8 @@ foreach test_file: test_source_files
   test(
     source_name,
     exec,
-    workdir: meson.current_build_dir()
+    workdir: meson.current_build_dir(),
+    is_parallel : false
   )
   
 endforeach
@@ -60,7 +61,8 @@ if found_benchmark
     test(
       source_name,
       exec,
-      workdir: meson.current_build_dir()
+      workdir: meson.current_build_dir(),
+      is_parallel : false
     )
   
   endforeach

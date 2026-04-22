@@ -34,6 +34,18 @@ using peaks_t = std::vector<image_view<ContainedT>>;
 /// sorted vector of peaks.
 /// The peaks are returned as \sa image_view and the size of the
 /// image_view can be adjusted by setting \a peak_radius
+/// Brute force is typcally faster for smaller windows and three or less peaks.
+template < template<typename> class ImageT,
+           typename ContainedT,
+           typename ReturnT = peaks_t<ContainedT>,
+           typename = typename std::enable_if_t< is_imagetype_v<ImageT<ContainedT>> >
+           >
+ReturnT find_peaks_brute( const ImageT<ContainedT>& im, uint16_t num_peaks, uint32_t peak_radius );
+
+/// Find highest \a num_peaks peaks in an image and return a
+/// sorted vector of peaks.
+/// The peaks are returned as \sa image_view and the size of the
+/// image_view can be adjusted by setting \a peak_radius
 template < template<typename> class ImageT,
            typename ContainedT,
            typename ReturnT = peaks_t<ContainedT>,
@@ -47,6 +59,27 @@ template < template<typename> class ImageT,
            typename result_t = point2<double>
            >
 result_t fit_simple_guassian( const image_view<ContainedT>& );
+
+/// Fit 3x3 two-dimensional Gaussian curves to a peak
+template < template<typename> class ImageT,
+           typename ContainedT,
+           typename result_t = point2<double>
+           >
+result_t fit_3x3_guassian( const image_view<ContainedT>& );
+
+/// Fit two one-dimensional centroid curves to a peak
+template < template<typename> class ImageT,
+           typename ContainedT,
+           typename result_t = point2<double>
+           >
+result_t fit_simple_centroid( const image_view<ContainedT>& );
+
+/// Fit two one-dimensional parabolic curves to a peak
+template < template<typename> class ImageT,
+           typename ContainedT,
+           typename result_t = point2<double>
+           >
+result_t fit_simple_parabolic( const image_view<ContainedT>& );
 
 /// apply a function to each pixel; op is of form:
 ///

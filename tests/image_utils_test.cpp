@@ -30,7 +30,7 @@ namespace logger = openpiv::core::logger;
 
 TEST_CASE("image_utils_test - constant_fill_test")
 {
-    g8_image im; g_8 v;
+    image_g8 im; g_8 v;
     std::tie( im, v ) = create_and_fill( size( 200, 100 ), 128_g8 );
     bool result = true;
     for ( uint32_t i=0; i<im.pixel_count(); ++i )
@@ -41,7 +41,7 @@ TEST_CASE("image_utils_test - constant_fill_test")
 
 TEST_CASE("image_utils_test - generator_fill_test")
 {
-    g8_image im{128, 128};
+    image_g8 im{128, 128};
     fill( im, [](auto, auto y){ return y; } );
 
     bool result = true;
@@ -60,8 +60,9 @@ TEST_CASE("image_utils_test - pnm_load_save_test")
     std::shared_ptr<image_loader> loader{ image_loader_registry::find(is) };
     REQUIRE(!!loader);
 
-    g16_image im;
+    image_g16 im;
     loader->load( is, im );
+    is.close();
 
     // write data
     std::shared_ptr<image_loader> writer{ image_loader_registry::find("image/x-portable-anymap") };
@@ -77,12 +78,14 @@ TEST_CASE("image_utils_test - pnm_load_save_test")
     loader = image_loader_registry::find(is);
     REQUIRE(!!loader);
 
-    g16_image reloaded;
+    image_g16 reloaded;
     loader->load( is, reloaded );
+    is.close();
 
     {
         std::ofstream os( "reloaded.pgm", std::ios_base::trunc | std::ios_base::out | std::ios_base::binary );
         writer->save( os, reloaded );
+        os.close();
     }
 
     // and check the two images are equal
@@ -91,7 +94,7 @@ TEST_CASE("image_utils_test - pnm_load_save_test")
 
 TEST_CASE("image_utils_test - rgba_split_test")
 {
-    rgba16_image im{ 200, 200, rgba_16{100, 200, 300, 400} };
+    image_rgba16 im{ 200, 200, rgba_16{100, 200, 300, 400} };
     auto [ r, g, b, a ] = split_to_channels(im);
 
     {
@@ -127,8 +130,9 @@ TEST_CASE("image_utils_test - rgba_join_test")
     std::shared_ptr<image_loader> loader{ image_loader_registry::find(is) };
     REQUIRE(!!loader);
 
-    g16_image im;
+    image_g16 im;
     loader->load( is, im );
+    is.close();
 
     g_16 min, max;
     std::tie(min, max) = find_image_range( im );
@@ -142,21 +146,22 @@ TEST_CASE("image_utils_test - rgba_join_test")
     auto b = create_image_view( im, rect{ {20, 20}, output_size } );
     auto a = create_image_view( im, rect{ {30, 30}, output_size } );
 
-    rgba16_image rgba = join_from_channels( r, g, b, a);
+    image_rgba16 rgba = join_from_channels( r, g, b, a);
 
     std::shared_ptr<image_loader> writer{ image_loader_registry::find("image/x-portable-anymap") };
     std::fstream os( "test-rgbjoin.ppm", std::ios_base::trunc | std::ios_base::out | std::ios_base::binary );
     writer->save( os, rgba );
+    os.close();
 }
 
 TEST_CASE("image_utils_test - simple_transpose_test")
 {
-    g16_image im{ 100, 200 };
+    image_g16 im{ 100, 200 };
     std::iota( std::begin( im ), std::end( im ), 0 );
 
     REQUIRE( save_to_file( "transpose_input.pgm", im ) );
 
-    g16_image transposed{ transpose( im ) };
+    image_g16 transposed{ transpose( im ) };
     REQUIRE( save_to_file( "transpose_output.pgm", transposed ) );
 
     REQUIRE( transposed.width()  == im.height() );
@@ -168,11 +173,11 @@ TEST_CASE("image_utils_test - simple_transpose_test")
 
 TEST_CASE("image_utils_test - identity_transpose_test")
 {
-    g16_image im{ 100, 200 };
+    image_g16 im{ 100, 200 };
     std::iota( std::begin( im ), std::end( im ), 0 );
 
-    g16_image transposed{ transpose( im ) };
-    g16_image identity{ transpose( transposed ) };
+    image_g16 transposed{ transpose( im ) };
+    image_g16 identity{ transpose( transposed ) };
 
     auto i = std::cbegin(im);
     auto e = std::cend(im);
@@ -186,14 +191,14 @@ TEST_CASE("image_utils_test - identity_transpose_test")
 
 TEST_CASE("image_utils_test - complex_transpose_test")
 {
-    cf_image im{ 100, 200 };
+    image_cf im{ 100, 200 };
     std::generate( std::begin( im ), std::end( im ),
                    [i=0]() mutable {
                        return c_f{ i, i };
                    } );
 
 
-    cf_image transposed{ transpose( im ) };
+    image_cf transposed{ transpose( im ) };
 
     auto i = std::cbegin(im);
     auto e = std::cend(im);
@@ -207,7 +212,7 @@ TEST_CASE("image_utils_test - complex_transpose_test")
 
 TEST_CASE("image_utils_test - swap_quadrants_test")
 {
-    gf_image im{ 100, 100 };
+    image_gf im{ 100, 100 };
 
     apply(
         im,
@@ -245,7 +250,7 @@ TEST_CASE("image_utils_test - swap_quadrants_test")
 
 TEST_CASE("image_utils_test - peak_find_test")
 {
-    gf_image im{ 100, 100 };
+    image_gf im{ 100, 100 };
 
     // add some peaks
     im[ {20, 20} ] = 20.0;
@@ -278,7 +283,7 @@ TEST_CASE("image_utils_test - peak_find_test_with_offset")
     rect::point_t o{ 10, 10 };
     size s{ 100, 100 };
     const auto [ox, oy] = o.data();
-    gf_image im{ rect( o, s ) };
+    image_gf im{ rect( o, s ) };
     REQUIRE(im.rect() == rect( o, s ));
 
     // add some peaks
@@ -306,7 +311,7 @@ TEST_CASE("image_utils_test - peak_find_test_with_offset")
 
 TEST_CASE("image_utils_test - peak_find_test - empty")
 {
-    gf_image im{ 100, 100 };
+    image_gf im{ 100, 100 };
 
     // find the peaks - in order
     auto peaks{ find_peaks( im, 3, 1 ) };
@@ -315,7 +320,7 @@ TEST_CASE("image_utils_test - peak_find_test - empty")
 
 TEST_CASE("image_utils_test - extract_test")
 {
-    gf_image im{ 100, 100 };
+    image_gf im{ 100, 100 };
 
     // fill quadrants with values of 1, 2, 4, 8
     apply(
@@ -330,10 +335,10 @@ TEST_CASE("image_utils_test - extract_test")
         );
 
     size s{ im.width()/2, im.height()/2 };
-    gf_image q1 = extract(im, { {0, 0}, s });
-    gf_image q2 = extract(im, { {50, 0}, s });
-    gf_image q3 = extract(im, { {0, 50}, s });
-    gf_image q4 = extract(im, { {50, 50}, s });
+    image_gf q1 = extract(im, { {0, 0}, s });
+    image_gf q2 = extract(im, { {50, 0}, s });
+    image_gf q3 = extract(im, { {0, 50}, s });
+    image_gf q4 = extract(im, { {50, 50}, s });
 
     // check we've extracted only the part of the
     // original we wanted
@@ -360,7 +365,7 @@ TEST_CASE("image_utils_test - extract_test")
 
 TEST_CASE("image_utils_test - extract_image_view_test")
 {
-    gf_image im{ 100, 100 };
+    image_gf im{ 100, 100 };
 
     // fill central 25% with 1 else 0
     apply(
@@ -379,8 +384,8 @@ TEST_CASE("image_utils_test - extract_image_view_test")
         );
 
     size s{ im.width()/2, im.height()/2 };
-    gf_image c1 = extract(im, { {25, 25}, s });
-    gf_image c2 = extract(
+    image_gf c1 = extract(im, { {25, 25}, s });
+    image_gf c2 = extract(
         create_image_view(im, im.rect().dilate(0.5)),
         { {}, s }
         );
