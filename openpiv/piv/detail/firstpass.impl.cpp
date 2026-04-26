@@ -45,9 +45,19 @@ namespace openpiv::piv
         bool limit_search,
         int32_t threads
     ){
+        const uint32_t min_window_size = 8;
+        const uint32_t max_window_size = 1024;
+
+        // Make sure that window sizes are some sane value
+        if ((window_size[0] > max_window_size) || (window_size[1] > max_window_size))
+            core::exception_builder<std::runtime_error>() << "window size must be less than " << max_window_size << " pixels";
+
+        if ((window_size[0] < min_window_size) || (window_size[1] < min_window_size))
+            core::exception_builder<std::runtime_error>() << "window size must be greater than " << min_window_size << " pixels";
+
         // assert that the window size is even. Odd stuff throughs off the offsets
         if ((window_size[0] % 2) || (window_size[1] % 2))
-            core::exception_builder<std::runtime_error>() << "dimensions must be even";
+            core::exception_builder<std::runtime_error>() << "window size must be even";
 
         // Setup thread counts - 1 =  no threading; 0 = auto-select thread count; >1 = manually select thread count
         uint32_t thread_count = std::thread::hardware_concurrency()-1;

@@ -11,6 +11,7 @@ sources = [
     'filter/gaussian_lowpass.cpp',
     'filter/gaussian_highpass.cpp',
     'filter/gaussian_variance.cpp',
+    'interp/interp2d.cpp',
     'piv/evaluation_standard.cpp',
     'piv/piv_enums.cpp',
     'validate/validate_difference.cpp',
@@ -27,6 +28,7 @@ py.extension_module('pyopenpivcore',
     sources,
     include_directories: [
         openpiv_include, 
+        threadlib_include,
         pybind_include
     ],
     cpp_args: [

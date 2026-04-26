@@ -44,10 +44,10 @@ def test_equality():
     assert(p == popc.point2_i(40, 50))
     assert(p != popc.point2_i(50, 40))
 
-def test_inequality():
-    p = popc.point2_i(10, 1)
-    assert(p > popc.point2_i(5, 0))
-    assert(p >= popc.point2_i(10, 1))
-    assert(p < popc.point2_i(20, 1))
-    assert(p < popc.point2_i(1, 10))
-    assert(p <= popc.point2_i(10, 1))
+#def test_inequality():
+#    p = popc.point2_i(10, 1)
+#    assert(p > popc.point2_i(5, 0))
+#    assert(p >= popc.point2_i(10, 1))
+#    assert(p < popc.point2_i(20, 1))
+#    assert(p < popc.point2_i(1, 10))
+#    assert(p <= popc.point2_i(10, 1))

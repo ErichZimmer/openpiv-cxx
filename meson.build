@@ -7,7 +7,7 @@ project(
   default_options: [
     'buildtype=release',
     'cpp_std=c++17',
-    'warning_level=2'
+    'warning_level=3'
   ]
 )
 
@@ -27,7 +27,6 @@ if cxx_compiler != 'msvc'
   _gnu_args = cpp.get_supported_arguments(
     '-ffast-math',
     '-Wno-unknown-pragmas',
-    '-Wall',
     '-mthreads'
   )
   
