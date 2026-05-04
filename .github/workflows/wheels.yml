@@ -46,17 +46,11 @@ jobs:
         with:
           submodules: true
 
-      - name: Install RTools on Windows x64
-        if: ${{ matrix.platform == 'win_amd64' }}
-        shell: pwsh
-        run: |
-          choco install rtools --no-progress -y
-          $rtoolsBin = Get-ChildItem -Path 'C:\' -Directory -Filter 'rtools*' |
-            ForEach-Object { Join-Path $_.FullName 'ucrt64\bin' } |
-            Where-Object { Test-Path $_ } |
-            Select-Object -First 1
-          if (-not $rtoolsBin) { throw 'Could not find RTools UCRT bin directory' }
-          $rtoolsBin >> $env:GITHUB_PATH
+      - name: Setup MSVC (32-bit)
+        if: ${{ matrix.buildplat[1] == 'win32' }}
+        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d  # v1
+        with:
+          architecture: 'x86'
 
       - name: Configure Windows ARM64 compiler
         if: ${{ matrix.platform == 'win_arm64' }}
