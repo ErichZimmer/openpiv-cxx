@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["cp310"]
+        python: ["cp312"]
         include:
           - os: ubuntu-22.04
             platform: manylinux_x86_64
@@ -43,20 +43,6 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: true
-
-      - name: Setup MSVC (32-bit)
-        if: ${{ matrix.buildplat[1] == 'win32' }}
-        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d  # v1
-        with:
-          architecture: 'x86'
-
-      - name: Configure Windows ARM64 compiler
-        if: ${{ matrix.platform == 'win_arm64' }}
-        shell: pwsh
-        run: |
-          "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
-          "CC=clang-cl" >> $env:GITHUB_ENV
-          "CXX=clang-cl" >> $env:GITHUB_ENV
 
       - name: Add custom path (Linux/macOS)
         if: ${{ runner.os != 'Windows' }}
