@@ -11,6 +11,22 @@ __all__ = [
 ]
 
 
+OutC = Tuple[
+    cpiv.grid_coords,
+    cpiv.grid_data
+]
+
+
+OutP = Tuple[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray
+]
+
+
 def first_pass(
     image_a: Union[np.ndarray, cpiv.image_g_f32],
     image_b: Union[np.ndarray, cpiv.image_g_f32],
@@ -21,7 +37,7 @@ def first_pass(
     limit_search: bool=False,
     parse_output: bool=True,
     threads: int=1
-)-> Union[Tuple[cpiv.grid_coords, cpiv.grid_data], List[[np.ndarray]*6]]: 
+)-> Union[OutC, OutP]]: 
     """Standard PIV cross correlation algorithm.
 
     Standard PIV cross correlation algorithm where the mean is substracted
@@ -31,9 +47,9 @@ def first_pass(
 
     Parameters
     ----------
-    frame_a : ndarray
+    frame_a : ndarray, image_g_32
         An array of pixel intensities representing a 2D image.
-    frame_b : ndarray
+    frame_b : ndarray, image_g_32
         An array of pixel intensities representing a 2D image.
     window_size : int or list of int
         The size of the interrogation window. [default: 32 pix]
