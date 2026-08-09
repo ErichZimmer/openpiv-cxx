@@ -76,7 +76,8 @@ namespace openpiv::piv
     std::tuple<core::grid_coords, core::grid_data> create_deformation_field(
         const core::grid_coords& coarse_grid,
         const core::grid_data& coarse_data,
-        const core::size fine_size
+        const core::size fine_size,
+        int32_t threads
     ) {
         auto fine_grid = generate_fine_grid(
             coarse_grid,
@@ -87,12 +88,14 @@ namespace openpiv::piv
 
         fine_data.u = sparse_to_dense<core::image, core::g_f64>(
             coarse_data.u,
-            fine_grid
+            fine_grid,
+            threads
         );
 
         fine_data.v = sparse_to_dense<core::image, core::g_f64>(
             coarse_data.v,
-            fine_grid
+            fine_grid,
+            threads
         );
 
         return {fine_grid, fine_data};
@@ -102,12 +105,14 @@ namespace openpiv::piv
     core::grid_coords create_deformation_forward(
         const core::grid_coords& coarse_grid,
         const core::grid_data& coarse_data,
-        const core::size fine_size
+        const core::size fine_size,
+        int32_t threads
     ) {
         auto [fine_grid, fine_data] = create_deformation_field(
             coarse_grid,
             coarse_data,
-            fine_size
+            fine_size,
+            threads
         );
 
         // Overwrite fine grid values with update grid coords
@@ -139,12 +144,14 @@ namespace openpiv::piv
     std::tuple<core::grid_coords, core::grid_coords> create_deformation_symmetric(
         const core::grid_coords& coarse_grid,
         const core::grid_data& coarse_data,
-        const core::size fine_size
+        const core::size fine_size,
+        int32_t threads
     ) {
         auto [fine_grid, fine_data] = create_deformation_field(
             coarse_grid,
             coarse_data,
-            fine_size
+            fine_size,
+            threads
         );
 
         auto fine_grid_forward = fine_grid;
