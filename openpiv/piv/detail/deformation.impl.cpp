@@ -73,7 +73,7 @@ namespace openpiv::piv
     }
 
 
-    std::tuple<core::grid_coords, core::grid_data> create_deformation_field(
+    std::tuple<core::grid_coords, core::deform_data> create_deformation_field(
         const core::grid_coords& coarse_grid,
         const core::grid_data& coarse_data,
         const core::size fine_size,
@@ -84,7 +84,7 @@ namespace openpiv::piv
             fine_size
         );
 
-        auto fine_data = core::grid_data(fine_size);
+        auto fine_data = core::deform_data(fine_size);
 
         fine_data.u = sparse_to_dense<core::image, core::g_f64>(
             coarse_data.u,

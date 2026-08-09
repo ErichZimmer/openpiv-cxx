@@ -72,7 +72,7 @@ namespace openpiv::interp
 
         out.resize(mappings.size());
 
-        auto processor = [&src, &mappings, &out, &weights_table, src_width, src_height, kernel_half_size, kernel_full_size]( uint32_t ind )
+        auto processor = [&src, &mappings, &out, &weights_table, src_width, src_height, kernel_half_size, kernel_full_size]( uint32_t ind, std::vector<double>& wx, std::vector<double>& wy )
         {
             const uint32_t x = (ind % mappings.width());
             const uint32_t y = (ind / mappings.width());
@@ -88,8 +88,8 @@ namespace openpiv::interp
             double centered_offset_x = grid_coord_x - (cell_ix + 0.5);
             double centered_offset_y = grid_coord_y - (cell_iy + 0.5);
 
-            std::vector<double> wx = get_weights(centered_offset_x, weights_table);
-            std::vector<double> wy = get_weights(centered_offset_y, weights_table);
+            get_weights(centered_offset_x, weights_table, wx);
+            get_weights(centered_offset_y, weights_table, wy);
 
             double value = 0.0;
 
@@ -113,9 +113,12 @@ namespace openpiv::interp
         // check execution
         if (thread_count <= 1)
         {
+            std::vector<double> wx(kernel_full_size);
+            std::vector<double> wy(kernel_full_size);
+
             for (uint32_t i=0; i < mappings.pixel_count(); i++)
             {
-                processor(i);
+                processor(i, wx, wy);
             }
         }
         else
@@ -134,9 +137,12 @@ namespace openpiv::interp
             for ( const auto& chunk_size_ : chunk_sizes )
             {
                 pool.enqueue(
-                    [i, chunk_size_, &processor]() {
+                    [i, chunk_size_, &processor, kernel_full_size]() {
+                        std::vector<double> wx(kernel_full_size);
+                        std::vector<double> wy(kernel_full_size);
+
                         for ( uint32_t j=i; j<i + chunk_size_; ++j )
-                            processor(j);
+                            processor(j, wx, wy);
                     } );
                 i += chunk_size_;
             }

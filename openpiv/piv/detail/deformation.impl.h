@@ -29,7 +29,7 @@ namespace openpiv::piv
         const core::size fine_size
     );
 
-    DLL_EXPORT std::tuple<core::grid_coords, core::grid_data> create_deformation_field(
+    DLL_EXPORT std::tuple<core::grid_coords, core::deform_data> create_deformation_field(
         const core::grid_coords& coarse_grid,
         const core::grid_data& coarse_data,
         const core::size fine_size,
