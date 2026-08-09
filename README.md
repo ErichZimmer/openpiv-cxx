@@ -119,7 +119,7 @@ Install directory:
 The wrapper uses a somewhat different build system where the aforementioned meson build system ends up being the backend. The front end is through meson-python and allows for a simplified build process through pip. Simply follow the steps below and everything should hopefully work out.
 
 To initiate the build process, run the following command from the root directory of the project folder:
- * `pip wheel --wheel-dir=./tmp`
+ * `python -m pip wheel . -w tmp -Cbuild-dir=builddir`
 
  The wheel file should be built without issues, however there are several depent dynamic libraries that must be present with in the wheel. The wheel repairing process is somewhat different between Windows and Unix, but it is still largely the same.
 
