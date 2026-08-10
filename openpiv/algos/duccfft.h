@@ -1,20 +1,16 @@
 #pragma once
 
 // std
-#include <algorithm>
-#include <exception>
-#include <functional>
-#include <thread>
+#include <complex>
+#include <cstddef>
+#include <stdexcept>
 #include <tuple>
-#include <unordered_map>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
-// pocket
-#define POCKETFFT_NO_VECTORS
-#define POCKETFFT_NO_MULTITHREADING
-#include "pocketfft_hdronly.h"
-#undef POCKETFFT_NO_MULTITHREADING
-#undef POCKETFFT_NO_VECTORS
+// dynamically dispatched DUCC FFT shared-library API
+#include <ducc_fft.h>
 
 // local
 #include "algos/fft_common.h"
@@ -28,35 +24,39 @@
 namespace openpiv::algos {
 
     using namespace core;
-    namespace pfft = pocketfft;
 
-    /// Wrapper for PocketFFT
+    /// Wrapper for the dynamically dispatched DUCC FFT shared library
     ///
     /// This class is thread-safe
     template <typename T>
-    class PocketFFT
+    class DuccFFT
     {
         static_assert(
             std::is_same_v<T, float> || std::is_same_v<T, double>,
-            "PocketFFT only supports float or double (image_gf32, image_gf64)"
+            "DuccFFT only supports float or double (image_gf32, image_gf64)"
         );
 
         using value_t = T;
+        using std_complex_t = std::complex<value_t>;
         using image_cf_t = core::image< core::complex< value_t > >;  // complex image of T
         using image_gf_t = core::image< core::g< value_t > >;  // real image of T
 
         const size size_;
+        const ducc_fft::shape_t shape_;
+        const ducc_fft::shape_t axes_{ 1, 0 };
 
         /// storage for intermediate data
         struct data_t
         {
             image_cf_t output;
-            std::vector< c_f > fft_buffer;
+            std::vector<std_complex_t> fft_buffer_a;
             image_cf_t temp;
+            std::vector<std_complex_t> fft_buffer_b;
+            std::vector<value_t> real_buffer;
         };
 
         /// helpers to allow TLS for intermediate storage
-        using storage_t = std::vector< std::tuple<PocketFFT*, data_t> >;
+        using storage_t = std::vector< std::tuple<DuccFFT*, data_t> >;
         storage_t& storage() const
         {
             thread_local static storage_t static_data;
@@ -68,7 +68,7 @@ namespace openpiv::algos {
         /// of FFT to be called from multiple threads without locking
         data_t& cache() const
         {
-            PocketFFT* self = const_cast<PocketFFT*>(this);
+            DuccFFT* self = const_cast<DuccFFT*>(this);
             for ( auto& [fft, data] : storage() )
             {
                 if ( fft == self && data.output.size() == size_ )
@@ -76,18 +76,39 @@ namespace openpiv::algos {
             }
 
             data_t data;
-            size_t N{ maximal_size( size_ ).width() };
+            const std::size_t N = static_cast<std::size_t>( size_.area() );
             data.output.resize( size_ );
-            data.temp.resize( transpose(size_) );
-            data.fft_buffer.resize( N );
+            data.temp.resize( size_ );
+            data.fft_buffer_a.resize( N );
+            data.fft_buffer_b.resize( N );
+            data.real_buffer.resize( N );
             auto& [fft, result] = storage().emplace_back(self, std::move(data));
 
             return result;
         }
 
+        std::size_t spectrum_size() const
+        {
+            return static_cast<std::size_t>( size_.width() )
+                 * (static_cast<std::size_t>( size_.height() ) / 2 + 1);
+        }
+
+        static void copy_complex_to_image(
+            const std::vector<std_complex_t>& input,
+            image_cf_t& output,
+            std::size_t count )
+        {
+            for ( std::size_t i = 0; i < count; ++i )
+                output[i] = core::complex<value_t>{ input[i].real(), input[i].imag() };
+        }
+
     public:
-        PocketFFT( const core::size& size )
+        DuccFFT( const core::size& size )
             : size_(size)
+            , shape_{
+                static_cast<std::size_t>( size.height() ),
+                static_cast<std::size_t>( size.width() )
+              }
         { }
 
         /// Perform a 2-D FFT; will always produce a complex floating point image output
@@ -104,30 +125,30 @@ namespace openpiv::algos {
                     << "image size is different from expected: " << input.size() << ", " << size_;
             }
 
-            using value_t = typename ContainedT::value_t;
-
             // copy data, converting to complex
             cache().temp = input;
             cache().output.resize( input.size() );
 
-            const pfft::shape_t shape = {size_.width(), size_.height()};
-            const auto [stride_x, stride_y] = cache().temp.stride();
-            const pfft::stride_t stride = {static_cast<long>(stride_x), static_cast<long>(stride_y)};
+            auto& data = cache();
+            const std::size_t N = static_cast<std::size_t>( size_.area() );
+            for ( std::size_t i = 0; i < N; ++i )
+            {
+                data.fft_buffer_a[i] = std_complex_t{
+                    data.temp[i].real,
+                    data.temp[i].imag
+                };
+            }
 
-            // can reinterpret core::complex to std::complex because core::complex is packed and
-            // std::complex is also packed and makes guarantees about accessibility through array
-            // access
-            pfft::c2c<value_t>(
-                shape,
-                stride,
-                stride,                  // input and output strides should be the same
-                { 0, 1 },                // axes
-                d == direction::FORWARD, // forward
-                reinterpret_cast<const std::complex<value_t>*>(cache().temp.data()),
-                reinterpret_cast<std::complex<value_t>*>(cache().output.data()),
-                1.0 );
+            ducc_fft::c2c(
+                data.fft_buffer_a.data(),
+                data.fft_buffer_b.data(),
+                shape_,
+                axes_,
+                d == direction::FORWARD,
+                value_t{1} );
 
-            return cache().output;
+            copy_complex_to_image( data.fft_buffer_b, data.output, N );
+            return data.output;
         }
 
         /// Perform a 2-D FFT of two real images; will produce two
@@ -152,47 +173,42 @@ namespace openpiv::algos {
                     << ", " << size_;
             }
 
-            using value_t = typename ContainedT::value_t;
-
             cache().output.resize( a.size() );
             cache().temp.resize( b.size() );
 
-            auto& out_a = cache().output;
-            auto& out_b = cache().temp;
+            auto& data = cache();
+            const std::size_t N = static_cast<std::size_t>( size_.area() );
+            const std::size_t spectrum_N = spectrum_size();
 
-            constexpr auto stride_lambda = [](auto& im) -> pfft::stride_t
-                {
-                    const auto [stride_x, stride_y] = im.stride();
-                    return {static_cast<long>(stride_x), static_cast<long>(stride_y)};
-                };
+            for ( std::size_t i = 0; i < N; ++i )
+                data.real_buffer[i] = static_cast<value_t>( a[i].v );
 
-            const pfft::shape_t shape = {size_.width(), size_.height()};
-            const pfft::stride_t in_a_stride = stride_lambda(a);
-            const pfft::stride_t in_b_stride = stride_lambda(b);
-            const pfft::stride_t out_a_stride = stride_lambda(out_a);
-            const pfft::stride_t out_b_stride = stride_lambda(out_b);
+            ducc_fft::r2c(
+                data.real_buffer.data(),
+                data.fft_buffer_a.data(),
+                shape_,
+                axes_,
+                d == direction::FORWARD,
+                value_t{1} );
 
-            pfft::r2c<value_t>(
-                shape,
-                in_a_stride,
-                out_a_stride,
-                { 0, 1 },                // axes
-                d == direction::FORWARD, // forward
-                reinterpret_cast<const value_t*>(a.data()),
-                reinterpret_cast<std::complex<value_t>*>(out_a.data()),
-                1.0 );
+            for ( std::size_t i = 0; i < N; ++i )
+                data.real_buffer[i] = static_cast<value_t>( b[i].v );
 
-            pfft::r2c<value_t>(
-                shape,
-                in_b_stride,
-                out_b_stride,
-                { 0, 1 },                // axes
-                d == direction::FORWARD, // forward
-                reinterpret_cast<const value_t*>(b.data()),
-                reinterpret_cast<std::complex<value_t>*>(out_b.data()),
-                1.0 );
+            ducc_fft::r2c(
+                data.real_buffer.data(),
+                data.fft_buffer_b.data(),
+                shape_,
+                axes_,
+                d == direction::FORWARD,
+                value_t{1} );
 
-            return { out_a, out_b };
+            // DUCC reads and writes only the leading Hermitian-spectrum prefix.
+            // Both backing vectors and both OpenPIV images remain full-sized,
+            // matching the existing PocketFFT wrapper's storage behavior.
+            copy_complex_to_image( data.fft_buffer_a, data.output, spectrum_N );
+            copy_complex_to_image( data.fft_buffer_b, data.temp, spectrum_N );
+
+            return { data.output, data.temp };
         }
 
         template < template <typename> class ImageT,
@@ -216,27 +232,28 @@ namespace openpiv::algos {
                     << ", " << size_;
             }
 
-            OutT out{ in.size() };
-
-            constexpr auto stride_lambda = [](auto& im) -> pfft::stride_t
-                {
-                    const auto [stride_x, stride_y] = im.stride();
-                    return {static_cast<long>(stride_x), static_cast<long>(stride_y)};
+            auto& data = cache();
+            const std::size_t spectrum_N = spectrum_size();
+            for ( std::size_t i = 0; i < spectrum_N; ++i )
+            {
+                data.fft_buffer_a[i] = std_complex_t{
+                    static_cast<value_t>( in[i].real ),
+                    static_cast<value_t>( in[i].imag )
                 };
+            }
 
-            const pfft::shape_t shape = {size_.width(), size_.height()};
-            const pfft::stride_t in_stride = stride_lambda(in);
-            const pfft::stride_t out_stride = stride_lambda(out);
+            ducc_fft::c2r(
+                data.fft_buffer_a.data(),
+                data.real_buffer.data(),
+                shape_,
+                axes_,
+                d == direction::FORWARD,
+                value_t{1} );
 
-            pfft::c2r<ValueT>(
-                shape,
-                in_stride,
-                out_stride,
-                { 0, 1 },                // axes
-                d == direction::FORWARD, // forward
-                reinterpret_cast<const std::complex<ValueT>*>(in.data()),
-                reinterpret_cast<ValueT*>(out.data()),
-                1.0 );
+            OutT out{ in.size() };
+            const std::size_t N = static_cast<std::size_t>( size_.area() );
+            for ( std::size_t i = 0; i < N; ++i )
+                out[i] = static_cast<ValueT>( data.real_buffer[i] );
 
             return out;
         }

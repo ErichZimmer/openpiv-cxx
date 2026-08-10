@@ -10,6 +10,7 @@
 #include <tuple>
 
 #include "algos/pocket_fft.h"
+#include "algos/duccfft.h"
 #include "algos/stats.h"
 
 #include "core/enumerate.h"
@@ -44,6 +45,7 @@ namespace openpiv::piv
         bool zero_pad,
         bool centered,
         bool limit_search,
+        bool simd,
         int32_t threads
     ){
         const uint32_t min_window_size = 8;
@@ -92,8 +94,12 @@ namespace openpiv::piv
             corr_window_size = core::size{window_size[0] * 2, window_size[1] * 2};
 
         // Get FFT correlator (this is somewhat ugly due to pointer to function, but is the most concise?)
-        auto fft_algo = algos::PocketFFT<FloatT>( corr_window_size );
-        auto correlator = &algos::PocketFFT<FloatT>::cross_correlate_real<core::image, ContainerT>;
+        auto pocketfft_algo = algos::PocketFFT<FloatT>( corr_window_size );
+        auto pocketfft_correlator = &algos::PocketFFT<FloatT>::cross_correlate_real<core::image, ContainerT>;
+
+        auto duccfft_algo = algos::DuccFFT<FloatT>( corr_window_size );
+        auto duccfft_correlator = &algos::DuccFFT<FloatT>::cross_correlate_real<core::image, ContainerT>;
+
 
         // Unitform weights for FFT correlation
         // TODO: Add Gaussian weights
@@ -180,8 +186,11 @@ namespace openpiv::piv
             &image_b,
             &corr_window_size,
             &corr_weights,
-            &fft_algo,
-            &correlator,
+            &pocketfft_algo,
+            &pocketfft_correlator,
+            &duccfft_algo,
+            &duccfft_correlator,
+            simd,
             zero_pad,
             limit_search,
             &field_coords,
@@ -220,8 +229,10 @@ namespace openpiv::piv
 */
 
             // Correlate the image extracts
-            ImageT output{ (fft_algo.*correlator)( iw_a, iw_b ) };
-                        
+            ImageT output = simd
+                ? (duccfft_algo.*duccfft_correlator)(iw_a, iw_b)
+                : (pocketfft_algo.*pocketfft_correlator)(iw_a, iw_b);
+
             // Reduce output correlation matrix size to only contain valid values
             double dilation_ratio = 1.0;
 

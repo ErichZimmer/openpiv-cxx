@@ -125,7 +125,7 @@ To initiate the build process, run the following command from the root directory
 
  Windows:
 Make sure delvewheel is installed (e.g., `pip install delvewheel`). Then run this command:
-* `delvewheel repair tmp/*.whl --add-path ./builddir/openpiv -w ./wheels`
+* `delvewheel repair tmp/*.whl --add-path ./builddir/openpiv --add-path ./builddir/ducc_fft_disbatch -w ./wheelscls`
 
 Linux/Unix:
 Make sure auditwheel is installed (e.g., `pip install auditwheel`). Then run this command:

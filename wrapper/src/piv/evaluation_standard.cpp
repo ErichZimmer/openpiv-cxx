@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <array>
 #include <tuple>
+#include <string>
 
 #include "core/image.h"
 #include "core/point.h"
@@ -10,6 +11,7 @@
 #include "piv/multipass.h"
 #include "piv/correlation_utils.h"
 #include "piv/piv_common.h"
+#include "ducc_fft.h"
 
 // pybind
 #include <pybind11/pybind11.h>
@@ -21,6 +23,16 @@ namespace py = pybind11;
 
 using namespace openpiv;
 
+void add_ducc_simd_backend(py::module& m)
+{
+    m.def(
+        "DUCCFFT_SIMD_BACKEND",
+        []() {
+            return std::string(ducc_fft::backend_name());
+        },
+        "Return the Ducc FFT SIMD backend selected by Highway."
+    );
+}
 
 void add_piv_firstpass(py::module& m)
 {
@@ -32,7 +44,8 @@ void add_piv_firstpass(py::module& m)
              bool step,
              bool zero_pad, 
              bool centered, 
-             bool limit_search, 
+             bool limit_search,
+             bool simd,
              int32_t threads) -> py::tuple
           {
               auto [coords, data] = piv::process_images_standard(
@@ -44,6 +57,7 @@ void add_piv_firstpass(py::module& m)
                 zero_pad, 
                 centered, 
                 limit_search, 
+                simd,
                 threads
             );
 
@@ -58,6 +72,7 @@ void add_piv_firstpass(py::module& m)
         py::arg("zero_pad") = false,
         py::arg("centered") = false,
         py::arg("limit_search") = false,
+        py::arg("simd") = false,
         py::arg("threads") = 1
     );
 }
@@ -80,7 +95,8 @@ void add_piv_multipass(py::module& m)
              bool step,
              bool zero_pad, 
              bool centered, 
-             bool limit_search, 
+             bool limit_search,
+             bool simd, 
              int32_t threads) -> py::tuple
           {
               auto [coords, data] = piv::process_images_standard_multi(
@@ -97,6 +113,7 @@ void add_piv_multipass(py::module& m)
                 zero_pad, 
                 centered, 
                 limit_search, 
+                simd,
                 threads
             );
 
@@ -116,6 +133,7 @@ void add_piv_multipass(py::module& m)
         py::arg("zero_pad") = false,
         py::arg("centered") = false,
         py::arg("limit_search") = false,
+        py::arg("simd") = false,
         py::arg("threads") = 1
     );
 

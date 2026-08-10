@@ -51,6 +51,7 @@ namespace openpiv::piv
         bool zero_pad,
         bool centered,
         bool limit_search,
+        bool simd,
         int32_t threads
     ) {
         // Don't bother with checks as process image standard takes care of most of them
@@ -126,6 +127,7 @@ namespace openpiv::piv
             zero_pad,
             centered,
             limit_search,
+            simd,
             threads
         );
 
