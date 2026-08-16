@@ -14,6 +14,7 @@
 #include "core/vector_field.h"
 #include "core/exception_builder.h"
 #include "core/image_utils.h"
+#include "core/dll_export.h"
 
 #include "interp_common.impl.h"
 
@@ -22,7 +23,7 @@ namespace openpiv::interp
 {
     using namespace openpiv::core;
 
-    std::vector<double> poly_weights(double r, int32_t k);
+    DLL_EXPORT std::vector<double> poly_weights(double r, int32_t k);
 
 
     template <
