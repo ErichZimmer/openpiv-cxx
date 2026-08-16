@@ -101,25 +101,55 @@ namespace openpiv::interp
             get_weights(offset_x, weights_table, wx);
             get_weights(offset_y, weights_table, wy);
 
+            const int32_t start_x = cell_ix - kernel_half_size;
+            const int32_t start_y = cell_iy - kernel_half_size;
+
+            const bool interior =
+                start_x >= 0 &&
+                start_y >= 0 &&
+                start_x + kernel_full_size <= static_cast<int32_t>(src_width) &&
+                start_y + kernel_full_size <= static_cast<int32_t>(src_height);
+
             double value = 0.0;
             size_t jj = 0;
             size_t ii = 0;
 
-            for (int32_t j = 0; j < kernel_full_size; ++j)
+            if (interior)
             {
-                jj = core::mirror_index<int32_t>(cell_iy - kernel_half_size + j, src_height);
-
-                const ContainedT* row = src.line(jj);
-
-                for (int32_t i = 0; i < kernel_full_size; ++i)
+                for (int32_t j = 0; j < kernel_full_size; ++j)
                 {
-                    ii = core::mirror_index<int32_t>(cell_ix - kernel_half_size + i, src_width);
+                    jj = cell_iy - kernel_half_size + j;
 
-                    value += static_cast<double>(row[ii]) * wx[i] * wy[j];
+                    const ContainedT* row = src.line(jj);
+
+                    for (int32_t i = 0; i < kernel_full_size; ++i)
+                    {
+                        ii = cell_ix - kernel_half_size + i;
+
+                        value += static_cast<double>(row[ii]) * wx[i] * wy[j];
+                    }
                 }
-            }
 
-            out[{x,y}] = static_cast<ContainedT>(value);
+                out[{x,y}] = static_cast<ContainedT>(value);
+            }
+            else
+            {
+                for (int32_t j = 0; j < kernel_full_size; ++j)
+                {
+                    jj = core::mirror_index<int32_t>(cell_iy - kernel_half_size + j, src_height);
+
+                    const ContainedT* row = src.line(jj);
+
+                    for (int32_t i = 0; i < kernel_full_size; ++i)
+                    {
+                        ii = core::mirror_index<int32_t>(cell_ix - kernel_half_size + i, src_width);
+
+                        value += static_cast<double>(row[ii]) * wx[i] * wy[j];
+                    }
+                }
+
+                out[{x,y}] = static_cast<ContainedT>(value);
+            }
         };
 
         // check execution

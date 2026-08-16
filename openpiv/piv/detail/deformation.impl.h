@@ -212,7 +212,7 @@ namespace openpiv::piv
             }
         }
 
-        return {frame_a_deform, frame_b_deform};
+        return {std::move(frame_a_deform), std::move(frame_b_deform)};
     }
 
 } // end of namespace

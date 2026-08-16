@@ -110,7 +110,7 @@ namespace openpiv::piv
         const core::size fine_size,
         int32_t threads
     ) {
-        auto [fine_grid, fine_data] = create_deformation_field(
+        auto [fine_grid_forward, fine_data] = create_deformation_field(
             coarse_grid,
             coarse_data,
             fine_size,
@@ -137,14 +137,14 @@ namespace openpiv::piv
                 u = fine_data.u[{x_ind,y_ind}];
                 v = fine_data.v[{x_ind,y_ind}];
 
-                fine_grid[{x_ind,y_ind}] = {
+                fine_grid_forward[{x_ind,y_ind}] = {
                     x + u,
                     y + v
                 };
             }
         }
 
-        return std::move(fine_grid);
+        return std::move(fine_grid_forward);
     }
 
 
@@ -154,15 +154,16 @@ namespace openpiv::piv
         const core::size fine_size,
         int32_t threads
     ) {
-        auto [fine_grid, fine_data] = create_deformation_field(
+        // reuse fine_grid_forward since we do not need it
+        auto [fine_grid_forward, fine_data] = create_deformation_field(
             coarse_grid,
             coarse_data,
             fine_size,
             threads
         );
 
-        auto fine_grid_forward = fine_grid;
-        auto fine_grid_reverse = fine_grid;
+        //
+        core::grid_coords fine_grid_reverse(fine_grid_forward.size());
 
         // Overwrite fine grid values with update grid coords
         // We basically are matching this in NumPy syntax
