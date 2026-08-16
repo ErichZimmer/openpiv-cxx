@@ -12,6 +12,7 @@
 #include "core/image_type_traits.h"
 #include "core/image_utils.h"
 #include "core/pixel_types.h"
+#include "core/dll_export.h"
 
 #include "interp_common.impl.h"
 
@@ -20,7 +21,7 @@ namespace openpiv::interp
 {
     using namespace openpiv::core;
     
-    double lanczos_weighting(double x, int32_t a);
+    DLL_EXPORT double lanczos_weighting(double x, int32_t a);
 
 
     template <
