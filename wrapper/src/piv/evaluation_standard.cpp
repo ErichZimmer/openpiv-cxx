@@ -11,7 +11,8 @@
 #include "piv/multipass.h"
 #include "piv/correlation_utils.h"
 #include "piv/piv_common.h"
-#include "ducc_fft.h"
+
+#include "algos/duccfft_backend.h"
 
 // pybind
 #include <pybind11/pybind11.h>
@@ -27,10 +28,8 @@ void add_ducc_simd_backend(py::module& m)
 {
     m.def(
         "DUCCFFT_SIMD_BACKEND",
-        []() {
-            return std::string(ducc_fft::backend_name());
-        },
-        "Return the Ducc FFT SIMD backend selected by Highway."
+        &algos::duccfft_simd_backend,
+        "Return the SIMD backend selected by Highway."
     );
 }
 
