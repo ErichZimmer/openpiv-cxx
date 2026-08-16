@@ -58,6 +58,14 @@ setup = [
 ]
 install = ['--skip-subprojects=fmt']
 
+[tool.meson-python.wheel]
+exclude = [
+  "{libdir_shared}/libduccfft.dll*",
+  "{libdir_shared}/libopenpivcore.dll*",
+  "{libdir_static}/libduccfft.dll*",
+  "{libdir_static}/libopenpivcore.dll*",
+]
+
 [tool.cibuildwheel]
 skip = ["*_i686", "*_ppc64le", "*_s390x", "*_universal2"]
 test-command = "python -c \"from openpiv_cxx import pyopenpivcore as cpiv; assert cpiv.DUCCFFT_SIMD_BACKEND()\""
@@ -74,7 +82,6 @@ repair-wheel-command = "delvewheel repair --analyze-existing-exes --add-path \"{
 
 [tool.cibuildwheel.windows.config-settings]
 build-dir = "build-wheel"
-setup-args = ["-Ddelvewheel_repair=true"]
 
 [tool.cibuildwheel.macos]
 repair-wheel-command = ""
