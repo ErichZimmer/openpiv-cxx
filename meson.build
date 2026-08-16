@@ -7,7 +7,7 @@ project(
   default_options: [
     'buildtype=release',
     'cpp_std=c++17',
-    'warning_level=2'
+    'warning_level=3'
   ]
 )
 
@@ -27,7 +27,6 @@ if cxx_compiler != 'msvc'
   _gnu_args = cpp.get_supported_arguments(
     '-ffast-math',
     '-Wno-unknown-pragmas',
-    '-Wall',
     '-mthreads'
   )
   
@@ -45,6 +44,14 @@ disable_image_loaders = get_option('disable_image_loaders')
 pocketfft_include = include_directories(
   'external/pocketfft'
 )
+
+# POCKETFFT_NO_VECTORS disables PocketFFT's explicit vector backend.
+pocketfft_scalar_cpp_args = cpp.get_supported_arguments([
+  '-fno-tree-vectorize',
+  '-fno-vectorize',
+  '-fno-slp-vectorize',
+  '/Qvec-',
+])
 
 threadlib_include = include_directories(
   'external/threading'
@@ -91,13 +98,20 @@ if not fmt_dep.found()
   fmt_dep = fmt.get_variable('fmt_header_only_dep')
 endif
 
+# Build the dynamically dispatched DUCC FFT backend before openpivcore.
+# The dependency declared by this subdirectory also carries the public
+# ducc_fft.h include path to every target which instantiates DuccFFT.
+subdir('ducc_fft_disbatch')
+
 libopenpivcore_deps = [
+  duccfft_dep,
   fmt_dep,
   thread_dep
 ]
 
 openpiv_deps = [
   cxxopts_dep,
+  duccfft_dep,
   fmt_dep,
   thread_dep
 ]

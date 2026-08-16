@@ -67,7 +67,7 @@ On Windows, the following can be used:
 * pip install meson
 
 > [!NOTE]
-> Conda environments allows for GNU GCC toolchains to be installed in a pain-free fashion.
+> Conda or similar environment managers allow for GNU GCC toolchains to be installed in a pain-free fashion on Windows.
 
 To build:
 * `meson setup builddir`
@@ -76,8 +76,6 @@ To build:
 > It is good practice to setup `--prefix` flags so files are not installed on the current directory.
 >
 > SIMD can be enabled using GCC and passing `-march=native` like this: `meson setup builddir -Dcpp_args="-march=native"`
->
-> The Python wrapper can be built by enabling the build_wrapper option like this: `meson setup builddir -Dbuild_wrapper=true -Ddisable_image_loaders=true`
 
 Meson provides multiple build types such as debug, debugoptimized, and release. To change the build type, use the `--buildtype` flag. For example, `meson setup builddir --buildtype debugoptimized`.
 
@@ -117,16 +115,24 @@ Install directory:
 > [!WARNING]
 > When using GCC on Windows, libstdc++-6.dll and libgcc_s_seh-1.dll must be in PATH or next to the dll libraries in order to avoid a missing dll error. When using a different environment from where the build took place, these dll libraries would usually need to be copy and pasted next to libopenpivcore.
 
-## Dependencies
-* c++17 compiler e.g. clang++-5.0, gcc8
-* python3
-* [meson](https://mesonbuild.com/index.html)
-  * benchmark: used to run performance benchmarks
-  * catch2: unit test framework
-  * cxxopts: nice command line parsing
-  * libtiff: TIFF IO support
-    * libjpeg-turbo
-    * zlib
+## Wrapper Build
+The wrapper uses a somewhat different build system where the aforementioned meson build system ends up being the backend. The front end is through meson-python and allows for a simplified build process through pip. Simply follow the steps below and everything should hopefully work out.
+
+To initiate the build process, run the following command from the root directory of the project folder:
+ * `python -m pip wheel . -w tmp -Cbuild-dir=builddir`
+
+ The wheel file should be built without issues, however there are several depent dynamic libraries that must be present with in the wheel. The wheel repairing process is somewhat different between Windows and Unix, but it is still largely the same.
+
+ Windows:
+Make sure delvewheel is installed (e.g., `pip install delvewheel`). Then run this command:
+* `delvewheel repair tmp/*.whl --add-path ./builddir/openpiv --add-path ./builddir/ducc_fft_disbatch -w ./wheelscls`
+
+Linux/Unix:
+Make sure auditwheel is installed (e.g., `pip install auditwheel`). Then run this command:
+`LD_LIBRARY_PATH=./builddir/openpiv auditwheel repair tmp/*.whl -w ./wheels`
+
+The wheels can then be installed like this once they have been repaired:
+* `pip install wheels/*.whl`
 
 ## Performance
 

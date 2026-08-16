@@ -6,9 +6,11 @@
 #include <cmath>
 #include <vector>
 #include <array>
+#include <limits>
 #include <tuple>
 
 #include "algos/pocket_fft.h"
+#include "algos/duccfft.h"
 #include "algos/stats.h"
 
 #include "core/enumerate.h"
@@ -24,15 +26,15 @@
 
 #include "threadpool.hpp"
 
-#include "piv/deformation.h"
+#include "piv/correlation_utils.h"
+#include "piv/detail/extract_with_padding.impl.h"
 
 
 namespace openpiv::piv
 {
 
     using namespace openpiv::core;
-
-
+    
     // Basic cross-correlation
     std::tuple<core::grid_coords, core::grid_data> process_images_standard(
         const ImageT& image_a,
@@ -43,11 +45,22 @@ namespace openpiv::piv
         bool zero_pad,
         bool centered,
         bool limit_search,
+        bool simd,
         int32_t threads
     ){
+        const uint32_t min_window_size = 8;
+        const uint32_t max_window_size = 1024;
+
+        // Make sure that window sizes are some sane value
+        if ((window_size[0] > max_window_size) || (window_size[1] > max_window_size))
+            core::exception_builder<std::runtime_error>() << "window size must be less than " << max_window_size << " pixels";
+
+        if ((window_size[0] < min_window_size) || (window_size[1] < min_window_size))
+            core::exception_builder<std::runtime_error>() << "window size must be greater than " << min_window_size << " pixels";
+
         // assert that the window size is even. Odd stuff throughs off the offsets
         if ((window_size[0] % 2) || (window_size[1] % 2))
-            core::exception_builder<std::runtime_error>() << "dimensions must be even";
+            core::exception_builder<std::runtime_error>() << "window size must be even";
 
         // Setup thread counts - 1 =  no threading; 0 = auto-select thread count; >1 = manually select thread count
         uint32_t thread_count = std::thread::hardware_concurrency()-1;
@@ -79,94 +92,150 @@ namespace openpiv::piv
         auto corr_window_size = core::size{window_size[0], window_size[1]};
         if (zero_pad)
             corr_window_size = core::size{window_size[0] * 2, window_size[1] * 2};
-        
-        // Align padding to 8 double/16 float boundary (Supports AVX-512)
-        uint32_t alignment = 8u;
-
-        corr_window_size = {
-            ((corr_window_size.width()   + alignment + 1u) / alignment) * alignment,
-            ((corr_window_size.height()  + alignment + 1u) / alignment) * alignment
-        };
 
         // Get FFT correlator (this is somewhat ugly due to pointer to function, but is the most concise?)
-        auto fft_algo = algos::PocketFFT<FloatT>( corr_window_size );
-        auto correlator = &algos::PocketFFT<FloatT>::cross_correlate_real<core::image, ContainerT>;
+        auto pocketfft_algo = algos::PocketFFT<FloatT>( corr_window_size );
+        auto pocketfft_correlator = &algos::PocketFFT<FloatT>::cross_correlate_real<core::image, ContainerT>;
 
-        // Now get the correlation normalization matrix (note, this isn't zero-normalized CC)
-        auto divisor = ImageT(corr_window_size);
-        divisor = divisor + ContainerT(1);
+        auto duccfft_algo = algos::DuccFFT<FloatT>( corr_window_size );
+        auto duccfft_correlator = &algos::DuccFFT<FloatT>::cross_correlate_real<core::image, ContainerT>;
 
-        // If zero padded, add zero padding to the divisor matrix
-        const ImageT corr_div{ (fft_algo.*correlator)( divisor, divisor ) };
+
+        // Unitform weights for FFT correlation
+        // TODO: Add Gaussian weights
+        auto corr_weights = ImageT(corr_window_size);
+        
+        if (zero_pad)
+        {
+            // Gaussian weights for linear correlation to attenuate the periodic signals
+            // While not really zero padding, it is done this way to avoid spectral leakage            
+/*          
+            core::apply(
+                corr_weights,
+                [
+                    w = corr_weights.width(),
+                    h = corr_weights.height()
+                ]
+                (auto i, auto) -> ContainerT
+                {
+                    const size_t x = i % w;
+                    const size_t y = i / w;
+
+                    const double cx = (static_cast<double>(w) - 1.0) / 2.0;
+                    const double cy = (static_cast<double>(h) - 1.0) / 2.0;
+
+                    const double dx = (static_cast<double>(x) - cx) / static_cast<double>(w);
+                    const double dy = (static_cast<double>(y) - cy) / static_cast<double>(h);
+
+                    return ContainerT( std::exp(-16.0 * (dx * dx + dy * dy)) );
+                }
+            );
+*/
+
+            // Currently, little variation was seen in gaussian vs linear. May go back to a simpler lienar correlation format
+
+            core::apply(
+                corr_weights,
+                [
+                    w  = corr_weights.width(),
+                    h  = corr_weights.height(),
+                    wx = static_cast<size_t>(window_size[0]),
+                    wy = static_cast<size_t>(window_size[1])
+                ]
+                (auto i, auto) -> ContainerT
+                {
+                    const size_t index = static_cast<size_t>(i);
+                    const size_t x = index % w;
+                    const size_t y = index / w;
+
+                    const size_t x0 = (w - wx) / 2;
+                    const size_t y0 = (h - wy) / 2;
+
+                    const bool inside =
+                        x >= x0 && x < x0 + wx &&
+                        y >= y0 && y < y0 + wy;
+
+                    return inside ? ContainerT(1.0) : ContainerT(0.0);
+                }
+            );
+        }
+        else
+        {
+            // Uniform weights for circular correlation
+            core::fill(corr_weights, ContainerT(1.0));
+        }
 
         // Container for vector field
         auto field_coords = core::grid_coords(field_shape);
         auto field_data = core::grid_data(field_shape);
+
+        // Container for reusud memory
+        struct scratch_memory
+        {
+            ImageT a;
+            ImageT b;
+
+            explicit scratch_memory(const core::size& size)
+                : a(size), b(size)
+            {}
+        };
 
         // Lamba func to process PIV image pairs
         auto processor = [
             &image_a,
             &image_b,
             &corr_window_size,
-            &fft_algo,
-            &correlator,
-            &corr_div,
+            &corr_weights,
+            &pocketfft_algo,
+            &pocketfft_correlator,
+            &duccfft_algo,
+            &duccfft_correlator,
+            simd,
             zero_pad,
             limit_search,
             &field_coords,
             &field_data
-        ]( size_t i, const core::rect& ia)
+        ]( size_t i, const core::rect& ia, scratch_memory& scratch_local)
         {
+            const core::rect extract_window = zero_pad ? ia.dilate(2.0) : ia;
+            
+            auto& iw_a = scratch_local.a;
+            auto& iw_b = scratch_local.b;
+
             // Get relavant data from the images
-            const ImageT view_a{ core::extract( image_a, ia ) };
-            const ImageT view_b{ core::extract( image_b, ia ) };
+            extract_with_padding(image_a, extract_window, iw_a);
+            extract_with_padding(image_b, extract_window, iw_b);
 
             // Standardize the image
-            auto [view_a_mean, view_a_std] = algos::find_mean_std(view_a);
-            auto [view_b_mean, view_b_std] = algos::find_mean_std(view_b);
+            auto view_a_mean = algos::find_mean(iw_a);
+            auto view_b_mean = algos::find_mean(iw_b);
 
-            // Inset image extract into correlation window
-            ImageT iw_a{corr_window_size};
-            ImageT iw_b{corr_window_size};
+            iw_a = iw_a - ContainerT(view_a_mean);
+            iw_b = iw_b - ContainerT(view_b_mean);
 
-            // Make sure iw_a and iw_b are zeroed out
-            core::fill(iw_a, ContainerT(0));
-            core::fill(iw_b, ContainerT(0));
+            iw_a = iw_a * corr_weights;
+            iw_b = iw_b * corr_weights;
 
-            // If the corr window size is different than ia size, adjust
-            std::array<size_t, 2> offset{0};
-            if (corr_window_size != ia.size())
+            // On gaussian weights, re center around mean
+/*
+            if (zero_pad)
             {
-                offset[0] = (corr_window_size.width()  - ia.width())  / 2;
-                offset[1] = (corr_window_size.height() - ia.height()) / 2;
+                auto view_a_mean2 = algos::find_mean(iw_a);
+                auto view_b_mean2 = algos::find_mean(iw_b);
+
+                iw_a = iw_a - ContainerT(view_a_mean2);
+                iw_b = iw_b - ContainerT(view_b_mean2);
             }
-
-            for (size_t j = 0; j < view_a.height(); ++j)
-            {
-                for (size_t i = 0; i < view_a.width(); ++i)
-                {
-                    // Standardize the pixel intensities
-                    ContainerT val_a = (view_a[{i,j}] - view_a_mean) / view_a_std;
-                    ContainerT val_b = (view_b[{i,j}] - view_b_mean) / view_b_std;
-
-                    // Clip at zero to prevent cross correlation artifacts
-                    //val_a = val_a > 0 ? val_a : ContainerT(0);
-                    //val_b = val_b > 0 ? val_b : ContainerT(0);
-
-                    iw_a[{i + offset[0], j + offset[1]}] = val_a;
-                    iw_b[{i + offset[0], j + offset[1]}] = val_b;
-                }
-            }
+*/
 
             // Correlate the image extracts
-            ImageT output{ (fft_algo.*correlator)( iw_a, iw_b ) };
-            
-            // Normalize the output
-            output = output / corr_div;
-            
+            ImageT output = simd
+                ? (duccfft_algo.*duccfft_correlator)(iw_a, iw_b)
+                : (pocketfft_algo.*pocketfft_correlator)(iw_a, iw_b);
+
             // Reduce output correlation matrix size to only contain valid values
-            // Note: We use `zero_pad` here because IW can have different sizes due to alignment padding
             double dilation_ratio = 1.0;
+
             if (zero_pad)
                 dilation_ratio *= 0.5;
             
@@ -176,28 +245,29 @@ namespace openpiv::piv
             auto valid_corr = core::create_image_view( output, output.rect().dilate(dilation_ratio) );
 
             // Get mean of valid_corr to calculate s2n ratio
-            auto [corr_mean, corr_std] = algos::find_mean_std(valid_corr);
+            auto corr_mean = algos::find_mean(valid_corr);
             
             // find peaks
             // core::peaks_t<core::g_f64> peaks;
             constexpr uint16_t num_peaks = 2;
+            constexpr uint16_t min_peak_count = 1;
             constexpr uint16_t radius = 1;
 
-            auto peaks = core::find_peaks( valid_corr, num_peaks, radius );
+            auto peaks = core::find_peaks_brute( valid_corr, num_peaks, radius );
 
             // Add grid to data
-            auto bl = ia.bottomLeft();
+            auto bl = extract_window.bottomLeft();
             auto midpoint = ia.midpoint();
 
             field_coords[i] = midpoint;
-
             //field_coords[i][1] = image_a.height() - midpoint[1];
+            
 
             // Early escape if not enough peaks were found
-            if ( peaks.size() != num_peaks )
+            if ( peaks.size() < min_peak_count )
             {
-                field_data.u[i]    = grid_data_t(0);
-                field_data.v[i]    = grid_data_t(0);
+                field_data.u[i]    = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
+                field_data.v[i]    = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
                 field_data.s2n[i]  = grid_data_t(0);
                 field_data.p2p[i]  = grid_data_t(0);
                 field_data.peak[i] = grid_data_t(0);
@@ -205,16 +275,16 @@ namespace openpiv::piv
 
                 return;
             }
-
+            
             // Get subpixel information and add it to vector field data
             auto peak = peaks[0];
             auto peak_location = core::fit_simple_gaussian( peak );
 
             // u and v signs are swapped to match openpiv
-            field_data.u[i] = -(midpoint[0] - (bl[0] + peak_location[0] - offset[0]));
-            field_data.v[i] = -(midpoint[1] - (bl[1] + peak_location[1] - offset[1]));
+            field_data.u[i] = -(midpoint[0] - (bl[0] + peak_location[0]));
+            field_data.v[i] = -(midpoint[1] - (bl[1] + peak_location[1]));
             field_data.s2n[i]  = peaks[0][{1, 1}] / corr_mean;
-            field_data.p2p[i]  = peaks[0][{1, 1}] / peaks[1][{1, 1}];
+            field_data.p2p[i]  = (peaks.size() > min_peak_count) ? peaks[0][{1, 1}] / peaks[1][{1, 1}] : 1.0;
             field_data.peak[i] = peaks[0][{1, 1}];
         };
 
@@ -235,19 +305,23 @@ namespace openpiv::piv
             {
                 pool.enqueue(
                     [i, chunk_size_, &grid, &processor, &corr_window_size]() {
+                        scratch_memory scratch_local_storage(corr_window_size);
+
                         for ( size_t j=i; j<i + chunk_size_; ++j )
-                            processor(j, grid[j]);
+                            processor(j, grid[j], scratch_local_storage);
                     } );
                 i += chunk_size_;
             }
         }
         else
         {
+            scratch_memory scratch_local_storage(corr_window_size);
+            
             for (size_t i = 0; i < grid.size(); ++i)
-                processor(i, grid[i]);
+                processor(i, grid[i], scratch_local_storage);
         }
 
-        return {field_coords, field_data};
+        return {std::move(field_coords), std::move(field_data)};
     }
 
 } // end of namespace

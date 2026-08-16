@@ -18,8 +18,12 @@ namespace openpiv::interp
    };
 
    template <typename Func>
-   lut_v make_lut(Func func, size_t lut_size, double r_min, double r_max)
-   {
+   lut_v make_lut(
+      Func func, 
+      size_t lut_size,
+       double r_min, 
+       double r_max
+   ) {
       if (lut_size == 0) 
          core::exception_builder<std::runtime_error>() << "lut_size must be non-zero";
 
@@ -58,20 +62,35 @@ namespace openpiv::interp
       return lut;
    }
 
-   inline std::vector<double> get_weights(double r, const lut_v& lut)
-   {
+   inline void get_weights(
+      double r, 
+      const lut_v& lut, 
+      std::vector<double>& out
+   ) {
       if (lut.rows.empty())
-         return {};
+         core::exception_builder<std::runtime_error>() << "weight lookup table must not be empty";
 
       size_t n_rows = lut.rows.size();
       size_t row_len = lut.rows[0].size();
+
+      if (row_len > out.size())
+         core::exception_builder<std::runtime_error>() << "weight lookup row exceeds fixed buffer size";
 
       double rmin = lut.r_min;
       double rmax = lut.r_max;
 
       // Clamp out of bounds
-      if (r <= rmin) return lut.rows.front();
-      if (r >= rmax) return lut.rows.back();
+      if (r <= rmin)
+      {
+         std::copy_n(lut.rows.front().begin(), row_len, out.begin());
+         return;
+      }
+
+      if (r >= rmax)
+      {
+         std::copy_n(lut.rows.back().begin(), row_len, out.begin());
+         return;
+      }
 
       // Get position in lookup table
       double pos = (r - rmin) * static_cast<double>(n_rows - 1) / (rmax - rmin);
@@ -85,10 +104,7 @@ namespace openpiv::interp
       const auto& row1 = lut.rows[i1];
 
       // linear interpolation to lower descritization error
-      std::vector<double> out(row_len);
       for (size_t k = 0; k < row_len; ++k)
          out[k] = (1.0 - t) * row0[k] + t * row1[k];
-
-      return out;
    }
 }

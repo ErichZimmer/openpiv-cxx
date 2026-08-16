@@ -29,22 +29,25 @@ namespace openpiv::piv
         const core::size fine_size
     );
 
-    DLL_EXPORT std::tuple<core::grid_coords, core::grid_data> create_deformation_field(
+    DLL_EXPORT std::tuple<core::grid_coords, core::deform_data> create_deformation_field(
         const core::grid_coords& coarse_grid,
         const core::grid_data& coarse_data,
-        const core::size fine_size
+        const core::size fine_size,
+        int32_t threads
     );
 
     DLL_EXPORT core::grid_coords create_deformation_forward(
         const core::grid_coords& coarse_grid,
         const core::grid_data& coarse_data,
-        const core::size fine_size
+        const core::size fine_size,
+        int32_t threads
     );
 
     DLL_EXPORT std::tuple<core::grid_coords, core::grid_coords> create_deformation_symmetric(
         const core::grid_coords& coarse_grid,
         const core::grid_data& coarse_data,
-        const core::size fine_size
+        const core::size fine_size,
+        int32_t threads
     );
 
 
@@ -61,7 +64,8 @@ namespace openpiv::piv
     >
     OutT sparse_to_dense(
         const core::image<ContainedT>& coarse_data,
-        const core::grid_coords& fine_grid
+        const core::grid_coords& fine_grid,
+        int32_t threads
     ) {
         // Allocate memory for interpolated values
         core::image<ContainedT> fine_data(fine_grid.size());
@@ -72,10 +76,38 @@ namespace openpiv::piv
             fine_grid,
             fine_data,
             2, // 4x4 interpolation kernel
-            1 // Only use a single thread
+            threads
         );
 
         return fine_data;
+    }
+
+    
+    template < 
+        template <typename> class ImageT,
+        typename ContainedT,
+        typename ValueT = typename ContainedT::value_t,
+        typename = typename std::enable_if_t<
+            is_imagetype_v<ImageT<ContainedT>> &&
+            is_real_mono_pixeltype_v<ContainedT> &&
+            std::is_floating_point<ValueT>::value
+        >
+    >
+    void sparse_to_dense(
+        const core::image<ContainedT>& coarse_data,
+        const core::grid_coords& fine_grid,
+        core::image<ContainedT>& out,
+        int32_t threads
+    ) {
+        out.resize(fine_grid.size());
+
+        interp::lagrange_interp2d<core::image, ContainedT>(
+            coarse_data,
+            fine_grid,
+            out,
+            2, // 4x4 interpolation kernel
+            threads
+        );
     }
 
             
@@ -95,6 +127,7 @@ namespace openpiv::piv
         int32_t k,
         int32_t threads
     ) {
+        // Copy frame a and frame b
         auto frame_a_deform = frame_a;
         auto frame_b_deform = frame_b;
 
@@ -103,7 +136,8 @@ namespace openpiv::piv
             auto deform_forward = create_deformation_forward(
                 coarse_grid,
                 coarse_data,
-                frame_a.size()
+                frame_a.size(),
+                threads
             );
 
             if (method == deform_method::LAGRANGE)
@@ -145,7 +179,8 @@ namespace openpiv::piv
             auto [deform_backward, deform_forward] = create_deformation_symmetric(
                 coarse_grid,
                 coarse_data,
-                frame_a.size()
+                frame_a.size(),
+                threads
             );
 
             if (method == deform_method::LAGRANGE)
@@ -206,7 +241,7 @@ namespace openpiv::piv
             }
         }
 
-        return {frame_a_deform, frame_b_deform};
+        return {std::move(frame_a_deform), std::move(frame_b_deform)};
     }
 
 } // end of namespace

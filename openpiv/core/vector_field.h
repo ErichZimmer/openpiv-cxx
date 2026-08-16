@@ -35,9 +35,23 @@ namespace openpiv::core {
         : u(s), v(s), s2n(s), p2p(s), peak(s), flag(s) {}
     };
 
+    template < typename ContainedT>
+    struct deformation_point_data
+    {
+        core::image<ContainedT> u;
+        core::image<ContainedT> v;
+
+        deformation_point_data(uint32_t w, uint32_t h)
+        : u(w, h), v(w, h){}
+
+        deformation_point_data(core::size s)
+        : u(s), v(s) {}
+    };
+
     using grid_data_t = core::g_f64;
     using grid_coords_t = double;
     using grid_data = vector_point_data<grid_data_t>;
     using grid_coords = core::image<core::point2<grid_coords_t>>;
+    using deform_data = deformation_point_data<grid_data_t>;
 
 }

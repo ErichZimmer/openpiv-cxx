@@ -25,6 +25,7 @@ namespace openpiv::piv
         bool zero_pad,
         bool centered,
         bool limit_search,
+        bool simd,
         int32_t threads
     );
 

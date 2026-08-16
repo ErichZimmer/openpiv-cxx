@@ -10,9 +10,11 @@
 #include <vector>
 
 // pocket
+#define POCKETFFT_NO_VECTORS
 #define POCKETFFT_NO_MULTITHREADING
 #include "pocketfft_hdronly.h"
 #undef POCKETFFT_NO_MULTITHREADING
+#undef POCKETFFT_NO_VECTORS
 
 // local
 #include "algos/fft_common.h"
@@ -86,11 +88,7 @@ namespace openpiv::algos {
     public:
         PocketFFT( const core::size& size )
             : size_(size)
-        {
-            // ensure multiple of 8 for doubles to ensure SIMD alignment
-            if ( !(is_mult8(size_.width()) && is_mult8(size_.height()) ) )
-                exception_builder<std::runtime_error>() << "dimensions must be multiple of 8: " << size_;
-        }
+        { }
 
         /// Perform a 2-D FFT; will always produce a complex floating point image output
         template < template <typename> class ImageT,

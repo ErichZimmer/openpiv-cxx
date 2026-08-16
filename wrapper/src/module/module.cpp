@@ -17,6 +17,8 @@ void add_gaussian_highpass(py::module &);
 void add_gaussian_variance(py::module &);
 void add_grid_coords(py::module &);
 void add_grid_data(py::module &);
+void add_interp2d(py::module &);
+void add_ducc_simd_backend(py::module &);
 void add_piv_firstpass(py::module &);
 void add_piv_multipass(py::module &);
 void add_piv_method(py::module &);
@@ -56,6 +58,8 @@ PYBIND11_MODULE(pyopenpivcore, m) {
     add_gaussian_variance(m);
     add_grid_coords(m);
     add_grid_data(m);
+    add_interp2d(m);
+    add_ducc_simd_backend(m);
     add_piv_method(m);
     add_piv_order(m);
     add_piv_firstpass(m);

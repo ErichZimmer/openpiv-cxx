@@ -8,6 +8,8 @@
 #include "core/image.h"
 #include "core/image_type_traits.h"
 #include "core/pixel_types.h"
+#include "core/exception_builder.h"
+#include "core/point.h"
 
 #include "interp/map_polynomial.h"
 
@@ -35,48 +37,53 @@ namespace openpiv::interp
         int32_t threads
     ) {
         // EPS accounts for floating point error
-        // const double EPS = 1e-4;
+        const double EPS = 1e-4;
 
         // Get the grid origin and spacing so we can convert to pixel units
-        const core::point2<uint32_t> origin = {
+        const core::point2<double> origin = {
             grid_coords[{0,0}][0],
             grid_coords[{0,0}][1]
         };
         
-        const core::point2<uint32_t> spacing = {
+        const core::point2<double> spacing = {
             grid_coords[{1,0}][0] - grid_coords[{0,0}][0],
             grid_coords[{0,1}][1] - grid_coords[{0,0}][1],
         };
 
-        // TODO: Make interpolation function take 1-D grid vector of grid for x and y
-        // Make sure grid is equidistant for ALL values (incase user accidentaly changes something)
-        /*
+        if ((std::abs(spacing[0]) < EPS) || (std::abs(spacing[1]) < EPS))
+            core::exception_builder<std::runtime_error>() << "field_coords must have non-zero grid spacing";
+
+        // TODO: Make interpolation function take 1-D grid vector of grid for x and y to save time
+        // Make sure grid is equidistant for ALL values
+        core::point2<core::grid_coords_t> coord_x1{};
+        core::point2<core::grid_coords_t> coord_x2{};
+        core::point2<core::grid_coords_t> coord_y1{};
+        core::point2<core::grid_coords_t> coord_y2{};
+        core::point2<core::grid_coords_t> spacing_g{};
+
         for (uint32_t y = 0; y < grid_coords.height() - 1; y++)
         {
             for (uint32_t x = 0; x < grid_coords.width() - 1; x++)
             {
-                const auto coord_x1 = grid_)coords[{x,y}];
-                const auto coord_x2 = grid_)coords[{x+1,y}];
-                const auto coord_y1 = grid_)coords[{x,y}];
-                const auto coord_y2 = grid_)coords[{x,y+1}];
+                coord_x1 = grid_coords[{x,y}];
+                coord_x2 = grid_coords[{x+1,y}];
+                coord_y1 = grid_coords[{x,y}];
+                coord_y2 = grid_coords[{x,y+1}];
 
-                core::point2<uint32_t> spacing_g = {
-                     coords_x2[0] - coord_x1[0],
-                     coords_y2[1] - coord_y1[1]
+                spacing_g = {
+                     coord_x2[0] - coord_x1[0],
+                     coord_y2[1] - coord_y1[1]
                 };
 
-                spacing_g = spacing_g - spacing;
+                spacing_g[0] = spacing_g[0] - spacing[0];
+                spacing_g[1] = spacing_g[1] - spacing[1];
 
                 if ((std::abs(spacing_g[0]) > EPS) || (std::abs(spacing_g[1]) > EPS))
                 {
-                    // Do something/raise error
-
-
-                    continue;
+                    core::exception_builder<std::runtime_error>() << "field_coords must have uniformly increasing coordinates";
                 }
             }
         }
-        */
 
         // Map interpolation values in pixels (e.g., grid spacing --> pixel spacing)
         out.resize(mappings.size());
@@ -113,6 +120,40 @@ namespace openpiv::interp
             k,
             threads
         );
+    }
+
+
+    template <
+        template<typename> class ImageT,
+        typename ContainedT,
+        typename ValueT = typename ContainedT::value_t,
+        typename ResultT = core::image<ContainedT>,
+        typename = std::enable_if_t<
+            is_imagetype_v<ImageT<ContainedT>> &&
+            is_real_mono_pixeltype_v<ContainedT> &&
+            std::is_floating_point_v<ValueT>
+        >
+    >
+    ResultT interp2d(
+        const core::grid_coords& grid_coords,
+        const core::image<ContainedT>& grid_data,
+        const core::grid_coords& mappings,
+        uint32_t k,
+        int32_t threads
+    ) {
+        ResultT out{ grid_data.size() };
+
+        interp2d<core::image, core::grid_data_t>(
+            grid_coords,
+            grid_data,
+            mappings,
+            out,
+            k,
+            threads
+        );
+
+        return out;
+
     }
 
 }// end of namespace

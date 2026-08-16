@@ -42,37 +42,28 @@ namespace openpiv::algos {
                        is_real_mono_pixeltype_v<ContainedT>
                        >
               >
-    std::tuple< ContainedT, ContainedT >
-    find_mean_std( const ImageT<ContainedT>& im )
+    ContainedT
+    find_mean( const ImageT<ContainedT>& im )
     {
         if (im.pixel_count() == 0)
-            return std::make_tuple(ContainedT(0), ContainedT(0));
+            return ContainedT(0);
 
-        double mean, std_temp, val;
+        double mean;
         auto p = std::cbegin( im );
         auto e = std::cend( im );
-        mean = std_temp = val = 0;
+        mean = 0;
 
         while ( p != e )
         {
-            val = static_cast<double>(*p);
-            mean = mean + val;
-            std_temp = std_temp + (val*val);
+            mean = mean + static_cast<double>(*p);
             ++p;
         }
 
         auto num_pixels = im.pixel_count();
+
         mean = mean / static_cast<double>(num_pixels);
 
-        double var = (std_temp / num_pixels) - (mean * mean);
-
-        // Guard against tiny negatives due to FP error
-        if (var < 0.0 && var > -std::numeric_limits<double>::epsilon())
-            var = 0.0;
-
-        double stdev = std::sqrt(std::max(0.0, var));
-
-        return std::make_tuple( ContainedT(mean), ContainedT(stdev) );
+        return ContainedT(mean);
     }
 
 
