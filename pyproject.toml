@@ -11,16 +11,16 @@ requires = [
 
 [project]
 name = "OpenPIV-cxx"
-version = "0.2.1"
+version = "0.3.0"
 description = "OpenPIV-cxx consists in a Python and c++ modules for to be used with OpenPIV-Python to help accelerate demanding processing pipelines."
 readme = "README.md"
 license = { text = "GPLv3" }
 authors = [
   { name = "Tim Dewhirst" },
-  { name = "Erich Zimmer" },  
+  { name = "Erich Zimmer" },
   { name = "Alex Liberzon" }
 ]
-keywords = ["PIV","particle image velocimetry","fluid mechanics"]
+keywords = ["PIV", "particle image velocimetry", "fluid mechanics"]
 classifiers = [
   "Development Status :: 4 - Beta",
 
@@ -62,6 +62,8 @@ install = ['--skip-subprojects=fmt']
 exclude = [
   "{libdir_shared}/libduccfft.dll*",
   "{libdir_shared}/libopenpivcore.dll*",
+  "{libdir_shared}/libduccfft*.dylib*",
+  "{libdir_shared}/libopenpivcore*.dylib*",
   "{libdir_static}/libduccfft.dll*",
   "{libdir_static}/libopenpivcore.dll*",
 ]
@@ -84,4 +86,7 @@ repair-wheel-command = "delvewheel repair --analyze-existing-exes --add-path \"{
 build-dir = "build-wheel"
 
 [tool.cibuildwheel.macos]
-repair-wheel-command = ""
+repair-wheel-command = "DYLD_LIBRARY_PATH=\"{project}/build-wheel/ducc_fft_disbatch:{project}/build-wheel/openpiv\" delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
+
+[tool.cibuildwheel.macos.config-settings]
+build-dir = "build-wheel"
