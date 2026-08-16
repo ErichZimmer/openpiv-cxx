@@ -30,7 +30,13 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: true
-
+          
+      - name: Set up 32-bit MinGW
+        if: ${{ runner.os == 'Windows' && matrix.buildplat[1] == 'win32' }}
+        uses: egor-tensin/setup-mingw@41b837e47d7f85214629d255b9c4bc3fcbe9fd63 # v3
+        with:
+          platform: x86
+          
       - name: Deduplicate meson-python macOS RPATHs
         if: ${{ runner.os == 'macOS' }}
         shell: bash
