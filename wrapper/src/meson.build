@@ -36,8 +36,7 @@ py.extension_module('pyopenpivcore',
     ],
     dependencies: [
         fmt_dep,
-        thread_dep,
-        duccfft_dep
+        thread_dep
     ],
     link_with: openpiv_lib,
     install: true,
