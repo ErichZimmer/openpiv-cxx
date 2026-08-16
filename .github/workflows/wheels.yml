@@ -3,12 +3,6 @@ name: Build wheels
 on:
   workflow_dispatch:
 
-  push:
-    branches:
-      - master
-    tags:
-      - "v*"
-
   pull_request:
     types: [opened, labeled, reopened, synchronize]
 
@@ -42,9 +36,9 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
 
-      - name: Upload wheel
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
-          path: ./wheelhouse/*.whl
-          if-no-files-found: error
+      # - name: Upload wheel
+      #   uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      #   with:
+      #     name: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
+      #     path: ./wheelhouse/*.whl
+      #     if-no-files-found: error
