@@ -40,7 +40,7 @@ duccfft_lib = shared_library(
   ],
   cpp_args: duccfft_cpp_args,
   gnu_symbol_visibility: 'hidden',
-  install: false,
+  install: true,
 )
 
 duccfft_dep = declare_dependency(
