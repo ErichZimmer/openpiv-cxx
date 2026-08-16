@@ -28,14 +28,16 @@ namespace openpiv::piv
 
         // Create a fine grid
         auto fine_grid = core::grid_coords(fine_size);
+        double x = 0.0;
+        double y = 0.0;
 
         // Iterate over field grid to make mappings in pixel unites
         for (uint32_t y_ind=0; y_ind<fine_size.height(); y_ind++)
         {
             for (uint32_t x_ind=0; x_ind<fine_size.width(); x_ind++)
             {
-                double x = static_cast<double>(x_ind);
-                double y = static_cast<double>(y_ind);
+                x = static_cast<double>(x_ind);
+                y = static_cast<double>(y_ind);
 
                 // shift to origin
                 x = x - origin[0];
@@ -98,7 +100,7 @@ namespace openpiv::piv
             threads
         );
 
-        return {fine_grid, fine_data};
+        return {std::move(fine_grid), std::move(fine_data)};
     }
 
 
@@ -120,15 +122,20 @@ namespace openpiv::piv
         // dx, dy = np.meshgrid(np.arange(img_shape[1]), np.arange(img_shape[0]))
         // dx = dx + du # du is dense interpolation of u
         // dy = dy + dv # du is dense interpolation of v
+        double x = 0.0;
+        double y = 0.0;
+        core::grid_data_t u{ 0.0 };
+        core::grid_data_t v{ 0.0 };
+
         for (uint32_t y_ind=0; y_ind<fine_size.height(); y_ind++)
         {
             for (uint32_t x_ind=0; x_ind<fine_size.width(); x_ind++)
             {
-                double x = static_cast<double>(x_ind);
-                double y = static_cast<double>(y_ind);
+                x = static_cast<double>(x_ind);
+                y = static_cast<double>(y_ind);
 
-                auto u = fine_data.u[{x_ind,y_ind}];
-                auto v = fine_data.v[{x_ind,y_ind}];
+                u = fine_data.u[{x_ind,y_ind}];
+                v = fine_data.v[{x_ind,y_ind}];
 
                 fine_grid[{x_ind,y_ind}] = {
                     x + u,
@@ -137,7 +144,7 @@ namespace openpiv::piv
             }
         }
 
-        return fine_grid;
+        return std::move(fine_grid);
     }
 
 
@@ -162,15 +169,20 @@ namespace openpiv::piv
         // dx, dy = np.meshgrid(np.arange(img_shape[1]), np.arange(img_shape[0]))
         // dx = dx - du/2 # du is dense interpolation of u
         // dy = dy - dv/2 # du is dense interpolation of v
+        double x = 0.0;
+        double y = 0.0;
+        core::grid_data_t u{ 0.0 };
+        core::grid_data_t v{ 0.0 };
+
         for (uint32_t y_ind=0; y_ind<fine_size.height(); y_ind++)
         {
             for (uint32_t x_ind=0; x_ind<fine_size.width(); x_ind++)
             {
-                double x = static_cast<double>(x_ind);
-                double y = static_cast<double>(y_ind);
+                x = static_cast<double>(x_ind);
+                y = static_cast<double>(y_ind);
 
-                auto u = fine_data.u[{x_ind,y_ind}];
-                auto v = fine_data.v[{x_ind,y_ind}];
+                u = fine_data.u[{x_ind,y_ind}];
+                v = fine_data.v[{x_ind,y_ind}];
 
                 fine_grid_reverse[{x_ind,y_ind}] = {
                     x - (u / 2),
@@ -184,7 +196,7 @@ namespace openpiv::piv
             }
         }
 
-        return {fine_grid_reverse, fine_grid_forward};
+        return {std::move(fine_grid_reverse), std::move(fine_grid_forward)};
     }
 
 } // end of namespace

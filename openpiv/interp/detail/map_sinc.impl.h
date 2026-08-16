@@ -102,16 +102,18 @@ namespace openpiv::interp
             get_weights(offset_y, weights_table, wy);
 
             double value = 0.0;
+            size_t jj = 0;
+            size_t ii = 0;
 
             for (int32_t j = 0; j < kernel_full_size; ++j)
             {
-                const size_t jj = core::mirror_index<int32_t>(cell_iy - kernel_half_size + j, src_height);
+                jj = core::mirror_index<int32_t>(cell_iy - kernel_half_size + j, src_height);
 
                 const ContainedT* row = src.line(jj);
 
                 for (int32_t i = 0; i < kernel_full_size; ++i)
                 {
-                    const size_t ii = core::mirror_index<int32_t>(cell_ix - kernel_half_size + i, src_width);
+                    ii = core::mirror_index<int32_t>(cell_ix - kernel_half_size + i, src_width);
 
                     value += static_cast<double>(row[ii]) * wx[i] * wy[j];
                 }

@@ -55,16 +55,22 @@ namespace openpiv::interp
 
         // TODO: Make interpolation function take 1-D grid vector of grid for x and y to save time
         // Make sure grid is equidistant for ALL values
+        core::point2<core::grid_coords_t> coord_x1{};
+        core::point2<core::grid_coords_t> coord_x2{};
+        core::point2<core::grid_coords_t> coord_y1{};
+        core::point2<core::grid_coords_t> coord_y2{};
+        core::point2<core::grid_coords_t> spacing_g{};
+
         for (uint32_t y = 0; y < grid_coords.height() - 1; y++)
         {
             for (uint32_t x = 0; x < grid_coords.width() - 1; x++)
             {
-                const auto coord_x1 = grid_coords[{x,y}];
-                const auto coord_x2 = grid_coords[{x+1,y}];
-                const auto coord_y1 = grid_coords[{x,y}];
-                const auto coord_y2 = grid_coords[{x,y+1}];
+                coord_x1 = grid_coords[{x,y}];
+                coord_x2 = grid_coords[{x+1,y}];
+                coord_y1 = grid_coords[{x,y}];
+                coord_y2 = grid_coords[{x,y+1}];
 
-                core::point2<double> spacing_g = {
+                spacing_g = {
                      coord_x2[0] - coord_x1[0],
                      coord_y2[1] - coord_y1[1]
                 };
