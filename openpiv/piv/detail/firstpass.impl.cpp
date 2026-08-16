@@ -321,7 +321,7 @@ namespace openpiv::piv
                 processor(i, grid[i], scratch_local_storage);
         }
 
-        return {field_coords, field_data};
+        return {std::move(field_coords), std::move(field_data)};
     }
 
 } // end of namespace

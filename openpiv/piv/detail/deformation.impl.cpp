@@ -88,15 +88,17 @@ namespace openpiv::piv
 
         auto fine_data = core::deform_data(fine_size);
 
-        fine_data.u = sparse_to_dense<core::image, core::g_f64>(
+        sparse_to_dense<core::image, core::g_f64>(
             coarse_data.u,
             fine_grid,
+            fine_data.u,
             threads
         );
 
-        fine_data.v = sparse_to_dense<core::image, core::g_f64>(
+        sparse_to_dense<core::image, core::g_f64>(
             coarse_data.v,
             fine_grid,
+            fine_data.v,
             threads
         );
 

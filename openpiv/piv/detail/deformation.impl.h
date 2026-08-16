@@ -82,6 +82,34 @@ namespace openpiv::piv
         return fine_data;
     }
 
+    
+    template < 
+        template <typename> class ImageT,
+        typename ContainedT,
+        typename ValueT = typename ContainedT::value_t,
+        typename = typename std::enable_if_t<
+            is_imagetype_v<ImageT<ContainedT>> &&
+            is_real_mono_pixeltype_v<ContainedT> &&
+            std::is_floating_point<ValueT>::value
+        >
+    >
+    void sparse_to_dense(
+        const core::image<ContainedT>& coarse_data,
+        const core::grid_coords& fine_grid,
+        core::image<ContainedT>& out,
+        int32_t threads
+    ) {
+        out.resize(fine_grid.size());
+
+        interp::lagrange_interp2d<core::image, ContainedT>(
+            coarse_data,
+            fine_grid,
+            out,
+            2, // 4x4 interpolation kernel
+            threads
+        );
+    }
+
             
     template<
         template <typename> class ImageT,
@@ -99,6 +127,7 @@ namespace openpiv::piv
         int32_t k,
         int32_t threads
     ) {
+        // Copy frame a and frame b
         auto frame_a_deform = frame_a;
         auto frame_b_deform = frame_b;
 
