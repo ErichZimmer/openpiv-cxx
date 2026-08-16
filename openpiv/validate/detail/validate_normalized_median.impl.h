@@ -77,12 +77,15 @@ namespace openpiv::validate
                     
                     const size_t ii = core::mirror_index<int32_t>(x - kernel_half_size + i, invalid.width());
 
-                    // If any value is nan, skip that value
-                    if ( std::isfinite(row_u[ii]) )
-                        kernel_u.push_back(row_u[ii]);
+                    const ValueT neighbor_u = static_cast<ValueT>(row_u[ii]);
+                    const ValueT neighbor_v = static_cast<ValueT>(row_v[ii]);
 
-                    if ( std::isfinite(row_v[ii]) )
-                        kernel_v.push_back(row_v[ii]);
+                    // If any value is nan, skip that value
+                    if ( std::isfinite(neighbor_u) )
+                        kernel_u.push_back(neighbor_u);
+
+                    if ( std::isfinite(neighbor_v) )
+                        kernel_v.push_back(neighbor_v);
                 }
             }
 
