@@ -5,7 +5,7 @@ on:
 
   push:
     branches:
-      - main
+      - master
     tags:
       - "v*"
 
@@ -14,8 +14,8 @@ on:
 
 jobs:
   build_wheels:
-    name: Build wheel ${{ matrix.python }}-${{ matrix.buildplat[1] }}-${{ matrix.buildplat[2] }}
-    runs-on: ${{ matrix.os }}
+    name: Build wheel ${{ matrix.python }}-${{ matrix.buildplat[1] }} on ${{ matrix.buildplat[0] }}
+    runs-on: ${{ matrix.buildplat[0] }}
     if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'build_wheels') }}
 
     strategy:
@@ -37,22 +37,14 @@ jobs:
         with:
           submodules: true
 
-      - name: Add custom path (Linux/macOS)
-        if: ${{ runner.os != 'Windows' }}
-        run: echo "$GITHUB_WORKSPACE/builddir/openpiv" >> "$GITHUB_PATH"
-
-      - name: Add custom path (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        shell: pwsh
-        run: |
-          "$env:GITHUB_WORKSPACE\builddir\openpiv" >> $env:GITHUB_PATH
-
       - name: Build wheels
         uses: pypa/cibuildwheel@8d2b08b68458a16aeb24b64e68a09ab1c8e82084  # v3.4.1
         env:
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - name: Upload wheel
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ matrix.python }}-${{ matrix.buildplat[1] }}-${{ matrix.buildplat[2] }}
+          name: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
           path: ./wheelhouse/*.whl
+          if-no-files-found: error
