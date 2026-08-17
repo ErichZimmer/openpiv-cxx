@@ -26,12 +26,8 @@ cpp_args = [
   '-D_USE_MATH_DEFINES'
 ]
 
-if cxx_compiler == 'gcc'
-  cpp_args += cpp.get_supported_arguments(
-    '-export-symbols'
-  )
-elif cxx_compiler == 'msvc'
-  cpp_args += ['-DEXPORT_DLL_SYMBOLS']
+if get_option('export_dll_symbols')
+  cpp_args += ['-DEXPORT_DLL_SYMBOLS=1']
 endif
 
 openpiv_lib = shared_library(
