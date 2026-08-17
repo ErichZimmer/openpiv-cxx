@@ -1,0 +1,146 @@
+name: Linux compiler tests
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gcc_python64:
+    name: GCC, x86-64, Python 3.12
+    runs-on: ubuntu-22.04
+    env:
+      CC: gcc
+      CXX: g++
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Build and install Python wheel
+        run: |
+          "$CXX" --version
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir tmp-gcc -Cbuild-dir=build-gcc
+
+          wheel="$(find tmp-gcc -maxdepth 1 -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          python -m pip install --force-reinstall "$wheel"
+
+      - name: Meson log
+        if: ${{ failure() }}
+        run: |
+          if [[ -f build-gcc/meson-logs/meson-log.txt ]]; then
+            cat build-gcc/meson-logs/meson-log.txt
+          fi
+
+      - name: Import Python extension
+        run: |
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+
+  clang_python64:
+    name: Clang, x86-64, Python 3.12
+    runs-on: ubuntu-22.04
+    env:
+      CC: clang
+      CXX: clang++
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Build and install Python wheel
+        run: |
+          "$CXX" --version
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir tmp-clang -Cbuild-dir=build-clang
+
+          wheel="$(find tmp-clang -maxdepth 1 -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          python -m pip install --force-reinstall "$wheel"
+
+      - name: Meson log
+        if: ${{ failure() }}
+        run: |
+          if [[ -f build-clang/meson-logs/meson-log.txt ]]; then
+            cat build-clang/meson-logs/meson-log.txt
+          fi
+
+      - name: Import Python extension
+        run: |
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+
+  intel_python64:
+    name: Intel oneAPI, x86-64, Python 3.12
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Setup Intel oneAPI compilers
+        uses: fortran-lang/setup-fortran@be037f0a45b1160f139d4ccd0b96f9e9bfd6a682 # v1.10.0
+        with:
+          compiler: intel
+          version: '2025.2'
+
+      - name: Build and install Python wheel
+        run: |
+          echo "CC=$CC"
+          echo "CXX=$CXX"
+          "$CXX" --version
+
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir tmp-intel -Cbuild-dir=build-intel
+
+          wheel="$(find tmp-intel -maxdepth 1 -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          python -m pip install --force-reinstall "$wheel"
+
+      - name: Meson log
+        if: ${{ failure() }}
+        run: |
+          if [[ -f build-intel/meson-logs/meson-log.txt ]]; then
+            cat build-intel/meson-logs/meson-log.txt
+          fi
+
+      - name: Import Python extension
+        run: |
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
