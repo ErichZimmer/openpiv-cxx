@@ -12,13 +12,11 @@ requires = [
 [project]
 name = "OpenPIV-cxx"
 version = "0.3.0"
-description = "OpenPIV-cxx consists in a Python and c++ modules for to be used with OpenPIV-Python to help accelerate demanding processing pipelines."
+description = "OpenPIV-cxx consists of Python and c++ modules to be used with OpenPIV-Python to help accelerate demanding processing pipelines."
 readme = "README.md"
 license = { text = "GPLv3" }
 authors = [
-  { name = "Tim Dewhirst" },
-  { name = "Erich Zimmer" },
-  { name = "Alex Liberzon" }
+  { name = "OpenPIV Contributors" }
 ]
 keywords = ["PIV", "particle image velocimetry", "fluid mechanics"]
 classifiers = [

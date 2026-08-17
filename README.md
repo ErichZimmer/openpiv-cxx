@@ -15,8 +15,7 @@ This project is the result of the collaborative effort of numerous researchers i
  
 ## Image Loaders
 
-Loading and storing images are crucial for any PIV software. Due to this requirement, openpiv-c--qt implements image loaders that can load, convert, and store images.
-Currently, there are a few extensions that are supported, but more are under development.
+Loading and storing images are crucial for any PIV software. Due to this requirement, openpiv-c--qt implements image loaders that can load, convert, and store images. Currently, there are a few extensions that are supported, but more are under development.
 
 | Supported Extensions     | Decode | Encode |
 |-------------------------|--------|--------|
@@ -75,7 +74,7 @@ To build:
 > [!NOTE]
 > It is good practice to setup `--prefix` flags so files are not installed on the current directory.
 >
-> SIMD can be enabled using GCC and passing `-march=native` like this: `meson setup builddir -Dcpp_args="-march=native"`
+> Mutiple SIMD dispatch paths are compiled using Highway. The highest supported SIMD type is automatically selected at runtime.
 
 Meson provides multiple build types such as debug, debugoptimized, and release. To change the build type, use the `--buildtype` flag. For example, `meson setup builddir --buildtype debugoptimized`.
 
@@ -113,7 +112,7 @@ Install directory:
     * average_subtract (executable)
     
 > [!WARNING]
-> When using GCC on Windows, libstdc++-6.dll and libgcc_s_seh-1.dll must be in PATH or next to the dll libraries in order to avoid a missing dll error. When using a different environment from where the build took place, these dll libraries would usually need to be copy and pasted next to libopenpivcore.
+> When using GCC on Windows, libstdc++-6.dll and libgcc_s_seh-1.dll must be in PATH or next to the dll libraries in order to avoid a missing dll error. When using a different environment from where the build took place, these dll libraries would usually need to be copy and pasted next to libopenpivcore. Additionally, libduccfft needs to be next to libopenpivcore in order to run properly.
 
 ## Wrapper Build
 The wrapper uses a somewhat different build system where the aforementioned meson build system ends up being the backend. The front end is through meson-python and allows for a simplified build process through pip. Simply follow the steps below and everything should hopefully work out.
