@@ -1,8 +1,8 @@
-![Build Status](https://github.com/OpenPIV/openpiv-c--qt/actions/workflows/build_test.yml/badge.svg)
-
 # OpenPIV (c++), a fast, open-source particle image velocimetry (PIV) library
 
-## An implementation of a PIV analysis engine in C++ using as few dependencies as possible; the implementation requires a c++17 compliant compiler.
+[![CMake](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/build_test.yml/badge.svg)](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/build_test.yml)
+[![Windows compiler tests](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/windows.yml/badge.svg)](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/windows.yml)
+[![Linux compiler tests](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/linux.yml/badge.svg)](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/linux.yml)
 
 This project is the result of the collaborative effort of numerous researchers in order to provide one of the fastest PIV software on the market while remaining cross-platform and open-source. The software can do the following:
 
@@ -56,11 +56,20 @@ Building uses meson, and is simplified by using meson wrap files to specify the 
 * ninja (e.g. `apt install ninja-build`)
 * meson (e.g., `pip install --user meson`)
 
+Supported compilers for each major platform are shown below. The version of the compiler must support c++17.
+
+| | Windows | Linux | MacOS |
+| --- | --- | --- | --- |
+| MSVC | x | - | - |
+| Intel One API | x | x | - |
+| GCC | x | x | x |
+| Clang | x | x | x |
+
+
 Unix users can also use a similar method to the Windows build environment as detailed below.
 
 On Windows, the following can be used:
-* install Visual Studio 2019 or 2022. Alternatively, MinGW-64 and Intel OneAPI c/c++ compilers are also known to work
-* install miniconda or python along with venv and setup virtual environment
+* install miniconda/miniforge or python along with venv and setup virtual environment
 * pip install cmake
 * pip install ninja
 * pip install meson
