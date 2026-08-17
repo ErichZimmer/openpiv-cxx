@@ -1,0 +1,214 @@
+name: Windows compiler tests
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  msvc_python64:
+    name: MSVC, x86-64, Python 3.12
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          architecture: x64
+
+      - name: Build, repair, and install Python wheel
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip build delvewheel
+          python -m build --wheel --outdir tmp-msvc -Cbuild-dir=build-msvc -Csetup-args=--vsenv
+
+          $wheel = Get-ChildItem 'tmp-msvc/*.whl' | Select-Object -First 1
+          delvewheel repair "$($wheel.FullName)" `
+            --add-path (Join-Path $PWD 'build-msvc/openpiv') `
+            --add-path (Join-Path $PWD 'build-msvc/ducc_fft_disbatch') `
+            -w wheels-msvc
+
+          $repairedWheel = Get-ChildItem 'wheels-msvc/*.whl' | Select-Object -First 1
+          python -m pip install "$($repairedWheel.FullName)"
+
+      - name: Meson log
+        if: ${{ failure() }}
+        shell: pwsh
+        run: |
+          if (Test-Path 'build-msvc/meson-logs/meson-log.txt') {
+            Get-Content 'build-msvc/meson-logs/meson-log.txt'
+          }
+
+      - name: Import Python extension
+        shell: pwsh
+        run: |
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+
+  clangcl_python64:
+    name: Clang-cl, x86-64, Python 3.12
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          architecture: x64
+
+      - name: Build, repair, and install Python wheel
+        shell: pwsh
+        run: |
+          clang-cl --version
+          "[binaries]","c = 'clang-cl'","cpp = 'clang-cl'","ar = 'llvm-lib'","c_ld = 'lld-link'","cpp_ld = 'lld-link'" | Out-File $PWD/clang-cl-build.ini -Encoding ascii
+
+          python -m pip install --upgrade pip build delvewheel
+          python -m build --wheel --outdir tmp-clangcl -Cbuild-dir=build-clangcl -Csetup-args=--vsenv -Csetup-args="--native-file=$PWD/clang-cl-build.ini"
+
+          $wheel = Get-ChildItem 'tmp-clangcl/*.whl' | Select-Object -First 1
+          delvewheel repair "$($wheel.FullName)" `
+            --add-path (Join-Path $PWD 'build-clangcl/openpiv') `
+            --add-path (Join-Path $PWD 'build-clangcl/ducc_fft_disbatch') `
+            -w wheels-clangcl
+
+          $repairedWheel = Get-ChildItem 'wheels-clangcl/*.whl' | Select-Object -First 1
+          python -m pip install "$($repairedWheel.FullName)"
+
+      - name: Meson log
+        if: ${{ failure() }}
+        shell: pwsh
+        run: |
+          if (Test-Path 'build-clangcl/meson-logs/meson-log.txt') {
+            Get-Content 'build-clangcl/meson-logs/meson-log.txt'
+          }
+
+      - name: Import Python extension
+        shell: pwsh
+        run: |
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+
+  mingw_python64:
+    name: MinGW GCC, x86-64, Python 3.12
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          architecture: x64
+
+      - name: Build, repair, and install Python wheel
+        shell: pwsh
+        run: |
+          gcc --version
+          g++ --version
+          $env:CC = 'gcc'
+          $env:CXX = 'g++'
+
+          python -m pip install --upgrade pip build delvewheel
+          python -m build --wheel --outdir tmp-mingw -Cbuild-dir=build-mingw
+
+          $wheel = Get-ChildItem 'tmp-mingw/*.whl' | Select-Object -First 1
+          delvewheel repair "$($wheel.FullName)" `
+            --add-path (Join-Path $PWD 'build-mingw/openpiv') `
+            --add-path (Join-Path $PWD 'build-mingw/ducc_fft_disbatch') `
+            -w wheels-mingw
+
+          $repairedWheel = Get-ChildItem 'wheels-mingw/*.whl' | Select-Object -First 1
+          python -m pip install "$($repairedWheel.FullName)"
+
+      - name: Meson log
+        if: ${{ failure() }}
+        shell: pwsh
+        run: |
+          if (Test-Path 'build-mingw/meson-logs/meson-log.txt') {
+            Get-Content 'build-mingw/meson-logs/meson-log.txt'
+          }
+
+      - name: Import Python extension
+        shell: pwsh
+        run: |
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+
+  intel_python64:
+    name: Intel oneAPI, x86-64, Python 3.12
+    runs-on: windows-2022
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          architecture: x64
+
+      - name: Setup Intel oneAPI compilers
+        uses: fortran-lang/setup-fortran@be037f0a45b1160f139d4ccd0b96f9e9bfd6a682 # v1.10.0
+        with:
+          compiler: intel
+          version: '2025.2'
+
+      - name: Build, repair, and install Python wheel
+        shell: pwsh
+        run: |
+          Write-Host "CC=$env:CC"
+          Write-Host "CXX=$env:CXX"
+          & $env:CXX --version
+
+          python -m pip install --upgrade pip build delvewheel
+          python -m build --wheel --outdir tmp-intel -Cbuild-dir=build-intel -Csetup-args=--vsenv
+
+          $wheel = Get-ChildItem 'tmp-intel/*.whl' | Select-Object -First 1
+          delvewheel repair "$($wheel.FullName)" `
+            --add-path (Join-Path $PWD 'build-intel/openpiv') `
+            --add-path (Join-Path $PWD 'build-intel/ducc_fft_disbatch') `
+            -w wheels-intel
+
+          $repairedWheel = Get-ChildItem 'wheels-intel/*.whl' | Select-Object -First 1
+          python -m pip install "$($repairedWheel.FullName)"
+
+      - name: Meson log
+        if: ${{ failure() }}
+        shell: pwsh
+        run: |
+          if (Test-Path 'build-intel/meson-logs/meson-log.txt') {
+            Get-Content 'build-intel/meson-logs/meson-log.txt'
+          }
+
+      - name: Import Python extension
+        shell: pwsh
+        run: |
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
