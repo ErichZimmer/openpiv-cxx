@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-// Keep only target-independent DUCC infrastructure in ::ducc0.  Every
+// Keep only target-independent DUCC infrastructure in ::ducc0. Every
 // template which depends on the SIMD value type (Cmplx, roots, plans and FFT
 // kernels) is included by ducc_fft_target-inl.h inside HWY_NAMESPACE.
 #include "ducc0/infra/aligned_array.h"
@@ -45,6 +45,7 @@
 
 #if HWY_ONCE
 namespace ducc_fft_detail {
+
 	HWY_EXPORT(BackendName);
 	HWY_EXPORT(C2CF32);
 	HWY_EXPORT(C2CF64);
@@ -53,6 +54,121 @@ namespace ducc_fft_detail {
 	HWY_EXPORT(C2RF32);
 	HWY_EXPORT(C2RF64);
 
+	// Keep Highway dispatch calls in the same namespace as HWY_EXPORT and pass
+	// unqualified function names. This is required for Highway's simplified
+	// single-target dispatch path (notably Windows ARM64/MSVC scalar fallback).
+	const char* DispatchBackendName() noexcept {
+		return HWY_DYNAMIC_DISPATCH(BackendName)();
+	}
+
+	void DispatchC2CF32(
+		const std::complex<float>* input,
+		std::complex<float>* output,
+		const std::vector<std::size_t>& shape,
+		const std::vector<std::size_t>& axes,
+		bool forward,
+		float scale
+	) {
+		HWY_DYNAMIC_DISPATCH(C2CF32)(
+			input,
+			output,
+			shape,
+			axes,
+			forward,
+			scale
+		);
+	}
+
+	void DispatchC2CF64(
+		const std::complex<double>* input,
+		std::complex<double>* output,
+		const std::vector<std::size_t>& shape,
+		const std::vector<std::size_t>& axes,
+		bool forward,
+		double scale
+	) {
+		HWY_DYNAMIC_DISPATCH(C2CF64)(
+			input,
+			output,
+			shape,
+			axes,
+			forward,
+			scale
+		);
+	}
+
+	void DispatchR2CF32(
+		const float* input,
+		std::complex<float>* output,
+		const std::vector<std::size_t>& shape,
+		const std::vector<std::size_t>& axes,
+		bool forward,
+		float scale
+	) {
+		HWY_DYNAMIC_DISPATCH(R2CF32)(
+			input,
+			output,
+			shape,
+			axes,
+			forward,
+			scale
+		);
+	}
+
+	void DispatchR2CF64(
+		const double* input,
+		std::complex<double>* output,
+		const std::vector<std::size_t>& shape,
+		const std::vector<std::size_t>& axes,
+		bool forward,
+		double scale
+	) {
+		HWY_DYNAMIC_DISPATCH(R2CF64)(
+			input,
+			output,
+			shape,
+			axes,
+			forward,
+			scale
+		);
+	}
+
+	void DispatchC2RF32(
+		const std::complex<float>* input,
+		float* output,
+		const std::vector<std::size_t>& real_shape,
+		const std::vector<std::size_t>& axes,
+		bool forward,
+		float scale
+	) {
+		HWY_DYNAMIC_DISPATCH(C2RF32)(
+			input,
+			output,
+			real_shape,
+			axes,
+			forward,
+			scale
+		);
+	}
+
+	void DispatchC2RF64(
+		const std::complex<double>* input,
+		double* output,
+		const std::vector<std::size_t>& real_shape,
+		const std::vector<std::size_t>& axes,
+		bool forward,
+		double scale
+	) {
+		HWY_DYNAMIC_DISPATCH(C2RF64)(
+			input,
+			output,
+			real_shape,
+			axes,
+			forward,
+			scale
+		);
+	}
+
 }  // namespace ducc_fft_detail
 
 namespace ducc_fft {
@@ -60,7 +176,7 @@ namespace ducc_fft {
 		void validate_call(
 			const void* input,
 			const void* output,
-			const shape_t& shape, 
+			const shape_t& shape,
 			const shape_t& axes
 		) {
 			if (input == nullptr || output == nullptr)
@@ -87,149 +203,149 @@ namespace ducc_fft {
 	}  // namespace
 
 	const char* backend_name() noexcept {
-		return HWY_DYNAMIC_DISPATCH(ducc_fft_detail::BackendName)();
+		return ducc_fft_detail::DispatchBackendName();
 	}
 
 	void c2c(
-		const std::complex<float>* input, 
+		const std::complex<float>* input,
 		std::complex<float>* output,
-		const shape_t& shape, 
+		const shape_t& shape,
 		const shape_t& axes,
 		bool forward,
 		float scale
 	) {
 		validate_call(
-			input, 
-			output, 
-			shape, 
+			input,
+			output,
+			shape,
 			axes
 		);
-		HWY_DYNAMIC_DISPATCH(ducc_fft_detail::C2CF32)(
+		ducc_fft_detail::DispatchC2CF32(
 			input,
-			output, 
-			shape, 
+			output,
+			shape,
 			axes,
-			forward, 
+			forward,
 			scale
 		);
 	}
 
 	void c2c(
-		const std::complex<double>* input, 
+		const std::complex<double>* input,
 		std::complex<double>* output,
-		const shape_t& shape, 
-		const shape_t& axes, 
+		const shape_t& shape,
+		const shape_t& axes,
 		bool forward,
 		double scale
 	) {
 		validate_call(
 			input,
-			output, 
-			shape, 
-			axes
-		);
-		HWY_DYNAMIC_DISPATCH(ducc_fft_detail::C2CF64)(
-			input, 
 			output,
-			shape, 
+			shape,
+			axes
+		);
+		ducc_fft_detail::DispatchC2CF64(
+			input,
+			output,
+			shape,
 			axes,
-			forward, 
+			forward,
 			scale
 		);
 	}
 
 	void r2c(
-		const float* input, 
+		const float* input,
 		std::complex<float>* output,
-		const shape_t& shape, 
-		const shape_t& axes, 
+		const shape_t& shape,
+		const shape_t& axes,
 		bool forward,
 		float scale
 	) {
 		validate_call(
-			input, 
-			output, 
-			shape, 
+			input,
+			output,
+			shape,
 			axes
 		);
-		HWY_DYNAMIC_DISPATCH(ducc_fft_detail::R2CF32)(
-			input, 
-			output, 
-			shape, 
+		ducc_fft_detail::DispatchR2CF32(
+			input,
+			output,
+			shape,
 			axes,
-			forward, 
+			forward,
 			scale
 		);
 	}
 
 	void r2c(
-		const double* input, 
+		const double* input,
 		std::complex<double>* output,
-		const shape_t& shape, 
-		const shape_t& axes, 
+		const shape_t& shape,
+		const shape_t& axes,
 		bool forward,
 		double scale
 	) {
 		validate_call(
-			input, 
-			output, 
-			shape, 
+			input,
+			output,
+			shape,
 			axes
 		);
-		HWY_DYNAMIC_DISPATCH(ducc_fft_detail::R2CF64)(
-			input, 
-			output, 
-			shape, 
+		ducc_fft_detail::DispatchR2CF64(
+			input,
+			output,
+			shape,
 			axes,
-			forward, 
+			forward,
 			scale
 		);
 	}
 
 	void c2r(
-		const std::complex<float>* input, 
+		const std::complex<float>* input,
 		float* output,
-		const shape_t& real_shape, 
-		const shape_t& axes, 
+		const shape_t& real_shape,
+		const shape_t& axes,
 		bool forward,
 		float scale
 	) {
 		validate_call(
-			input, 
-			output, 
-			real_shape, 
+			input,
+			output,
+			real_shape,
 			axes
 		);
-		HWY_DYNAMIC_DISPATCH(ducc_fft_detail::C2RF32)(
-			input, 
-			output, 
+		ducc_fft_detail::DispatchC2RF32(
+			input,
+			output,
 			real_shape,
-			axes, 
-			forward, 
+			axes,
+			forward,
 			scale
 		);
 	}
 
 	void c2r(
-		const std::complex<double>* input, 
+		const std::complex<double>* input,
 		double* output,
-		const shape_t& real_shape, 
-		const shape_t& axes, 
+		const shape_t& real_shape,
+		const shape_t& axes,
 		bool forward,
 		double scale
 	) {
 		validate_call(
-			input, 
-			output, 
-			real_shape, 
+			input,
+			output,
+			real_shape,
 			axes
 		);
-		HWY_DYNAMIC_DISPATCH(ducc_fft_detail::C2RF64)(
-			input, 
-			output, 
+		ducc_fft_detail::DispatchC2RF64(
+			input,
+			output,
 			real_shape,
-			axes, 
-			forward, 
+			axes,
+			forward,
 			scale
 		);
 	}
