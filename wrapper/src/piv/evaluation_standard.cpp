@@ -74,13 +74,51 @@ void add_piv_firstpass(py::module& m)
         py::arg("simd") = false,
         py::arg("threads") = 1
     );
+
+    m.def("process_images_robust",
+          [](const piv::ImageT& image_a, 
+             const piv::ImageT& image_b,
+             std::array<uint32_t,2> window_size,
+             std::array<uint32_t,2> overlap_size,
+             bool step,
+             bool zero_pad, 
+             bool centered, 
+             bool limit_search,
+             bool simd,
+             int32_t threads) -> py::tuple
+          {
+              auto [coords, data] = piv::process_images_robust(
+                image_a, 
+                image_b,
+                window_size, 
+                overlap_size,
+                step,
+                zero_pad, 
+                centered, 
+                limit_search, 
+                simd,
+                threads
+            );
+
+            return py::make_tuple(std::move(coords), std::move(data));
+        },
+
+        py::arg("image_a"),
+        py::arg("image_b"),
+        py::arg("window_size"),
+        py::arg("overlap_size"),
+        py::arg("step") = false,
+        py::arg("zero_pad") = false, // Note: not actually used
+        py::arg("centered") = false,
+        py::arg("limit_search") = false,
+        py::arg("simd") = false,
+        py::arg("threads") = 1
+    );
 }
 
 
 void add_piv_multipass(py::module& m)
 {
-    using ImageT = core::image_gf32;
-
      m.def("process_images_multipass",
           [](const piv::ImageT& image_a, 
              const piv::ImageT& image_b,
@@ -88,6 +126,7 @@ void add_piv_multipass(py::module& m)
              const core::grid_data&   old_data,
              std::array<uint32_t, 2> window_size,
              std::array<uint32_t, 2> overlap_size,
+             bool robust,
              piv::deform_method method,
              piv::deform_order order,
              int32_t k,
@@ -105,6 +144,7 @@ void add_piv_multipass(py::module& m)
                 old_data,
                 window_size, 
                 overlap_size,
+                robust,
                 method,
                 order,
                 k,
@@ -125,6 +165,7 @@ void add_piv_multipass(py::module& m)
         py::arg("old_data"),
         py::arg("window_size"),
         py::arg("overlap_size"),
+        py::arg("robust") = false,
         py::arg("method") = piv::deform_method::LAGRANGE,
         py::arg("order") = piv::deform_order::FORWARD,
         py::arg("k") = 3,
@@ -135,39 +176,4 @@ void add_piv_multipass(py::module& m)
         py::arg("simd") = false,
         py::arg("threads") = 1
     );
-
-
-    /*
-    m.def("process_images_nsqe",
-          [](ImageT image_a, 
-             ImageT image_b,
-             std::array<uint32_t,2> window_size,
-             std::array<uint32_t,2> overlap_size,
-             bool zero_pad, 
-             bool centered, 
-             int32_t threads) -> py::array_t<double>
-          {
-              auto [coords, data] = piv::process_images_nsqe(
-                image_a, 
-                image_b,
-                window_size, 
-                overlap_size,
-                zero_pad, 
-                centered, 
-                limit_search, 
-                threads
-            );
-
-            return openpiv_to_numpy(coords, data);
-        },
-
-        py::arg("image_a"),
-        py::arg("image_b"),
-        py::arg("window_size"),
-        py::arg("overlap_size"),
-        py::arg("zero_pad") = false,
-        py::arg("centered") = false,
-        py::arg("limit_search") = false,
-        py::arg("threads") = 1
-    */
 };

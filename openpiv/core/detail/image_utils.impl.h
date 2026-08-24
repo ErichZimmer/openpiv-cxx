@@ -82,7 +82,11 @@ template < template<typename> class ImageT,
            typename ReturnT,
            typename
            >
-ReturnT find_peaks_brute( const ImageT<ContainedT>& im, uint16_t num_peaks, uint32_t peak_radius ){
+ReturnT find_peaks_brute(
+    const ImageT<ContainedT>& im, 
+    uint16_t num_peaks,
+    uint32_t peak_radius
+) {
     ReturnT result;
     const auto result_w = 2*peak_radius + 1;
     const auto result_h = result_w;
@@ -137,6 +141,32 @@ ReturnT find_peaks_brute( const ImageT<ContainedT>& im, uint16_t num_peaks, uint
 
     // result.resize(num_peaks);
     return result;
+}
+
+template < template<typename> class ImageT,
+           typename ContainedT
+           >
+bool fit_log_safe(
+    const ImageT<ContainedT>& im,
+    int32_t peak_radius
+) {
+    const uint32_t peak_width = 2*peak_radius + 1;
+
+    if ( im.size() != size{peak_width, peak_width} )
+        exception_builder<std::runtime_error>() << "fit_log_safe: input must be nxn where n=" << peak_width;
+
+    for (int32_t i = -peak_radius; i < peak_radius+1; i++)
+    {
+        for (int32_t j = -peak_radius; j < peak_radius+1; j++)
+        {
+            double v = static_cast<double>(im[{i+peak_radius,j+peak_radius}]);
+
+            if (v < 0.0)
+                return false;
+        }
+    }
+
+    return true;
 }
 
 /// Fit two one-dimensional Gaussian curves to a peak

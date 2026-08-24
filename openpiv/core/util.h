@@ -19,9 +19,17 @@
 // define POSIX-style endianness constants for MSVC
 // (to be replaced w/ C++20 std::endian)
 #ifdef _MSC_VER
-  #define __ORDER_LITTLE_ENDIAN__ 1
-  #define __ORDER_BIG_ENDIAN__ 0
-  #define __BYTE_ORDER__ 1
+  #ifndef __ORDER_LITTLE_ENDIAN__
+    #define __ORDER_LITTLE_ENDIAN__ 1234
+  #endif
+
+  #ifndef __ORDER_BIG_ENDIAN__
+    #define __ORDER_BIG_ENDIAN__ 4321
+  #endif
+
+  #ifndef __BYTE_ORDER__
+    #define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
+  #endif
 #endif
 
 namespace openpiv::core {

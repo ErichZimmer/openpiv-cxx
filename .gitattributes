@@ -1,0 +1,4 @@
+.gitattributes text eol=lf
+external/** -text
+external-manifest.json text eol=lf
+tools/external_manifest.py text eol=lf

@@ -26,24 +26,23 @@ namespace openpiv::validate
         const core::vector_point_data<ContainedT>& field_data,
         ValueT threshold
     ) {
-        // Minimum kernel size after skipping NaNs
-        const uint32_t min_kernel_size = 2;
-
         // EPS for normalized kernel
         const ValueT EPS = 0.1;
 
+        // kernel_half_size=1 --> 3x3 kernel; kernel_half_size=2 --> 5x5 kernel
+        const int32_t kernel_half_size = 1;
+        const int32_t kernel_full_size = 2*kernel_half_size + 1;
 
-        // 3x3 kernel size
-        const uint32_t kernel_half_size = 1;
-        const uint32_t kernel_full_size = 2*kernel_half_size + 1;
+        // Minimum amount of elements in kernel after skipping NaNs
+        const uint32_t min_kernel_size = kernel_full_size;
 
         ResultT invalid{ field_data.u.size() };
 
         // Lambda function to process each vector point
         auto processor = [&]( uint32_t ind )
         {
-            const uint32_t x = (ind % invalid.width());
-            const uint32_t y = (ind / invalid.width());
+            const int32_t x = static_cast<int32_t>(ind % invalid.width());
+            const int32_t y = static_cast<int32_t>(ind / invalid.width());
 
             const auto vector_u = field_data.u[{x,y}];
             const auto vector_v = field_data.v[{x,y}];
@@ -96,7 +95,7 @@ namespace openpiv::validate
             // If not enough values are found within kernels, flag as invalid
             if ( (kernel_u.size() < min_kernel_size) || (kernel_v.size() < min_kernel_size) )
             {
-                invalid[{x,y}] = 1;
+                // invalid[{x,y}] = 1;
                 return;
             }
 

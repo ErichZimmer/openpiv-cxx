@@ -69,6 +69,7 @@ void add_grid_coords(py::module& m)
 void add_grid_data(py::module& m)
 {
     py::class_<grid_data>(m, "grid_data")
+        .def(py::init<const grid_data&>())
         .def(py::init<uint32_t, uint32_t>())
         .def(py::init<core::size>())
         // expose public members as read/write attributes
@@ -76,7 +77,20 @@ void add_grid_data(py::module& m)
         .def_readwrite("v", &grid_data::v)
         .def_readwrite("s2n", &grid_data::s2n)
         .def_readwrite("p2p", &grid_data::p2p)
-        .def_readwrite("peak", &grid_data::peak);
+        .def_readwrite("peak", &grid_data::peak)
+        .def_readwrite("flag", &grid_data::flag)
+        .def("width", [](const grid_data& data) {
+            return data.u.width();
+        })
+        .def("height", [](const grid_data& data) {
+            return data.u.height();
+        })
+        .def("size", [](const grid_data& data) {
+            return data.u.size();
+        })
+        .def("pixel_count", [](const grid_data& data) {
+            return data.u.pixel_count();
+        });
 }
     
 

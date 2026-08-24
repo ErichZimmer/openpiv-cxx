@@ -53,6 +53,15 @@ template < template<typename> class ImageT,
            >
 ReturnT find_peaks( const ImageT<ContainedT>& im, uint16_t num_peaks, uint32_t peak_radius );
 
+// Checks neighboring pixels to make sure they are safe for Gaussian peak fitting
+template < template<typename> class ImageT,
+           typename ContainedT
+           >
+bool fit_log_safe(
+    const ImageT<ContainedT>& im,
+    int32_t peak_radius
+);
+
 /// Fit two one-dimensional Gaussian curves to a peak
 template < template<typename> class ImageT,
            typename ContainedT,

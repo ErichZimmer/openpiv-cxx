@@ -1,14 +1,12 @@
-TAGS
-*~
-*#*#
-*.#*
 *.o
 *.so
 *.dll
 *.lib
+*.pyd
 *.exp
+*.ipynb_checkpoints*
 .vs/
 .vscode/
 .idea/
-tests/
+external-manifest.json
 builddir/

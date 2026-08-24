@@ -4,6 +4,7 @@ project(
   version: '0.2.0',
   license: 'GPL-3',
   meson_version: '>= 1.1.0',
+  subproject_dir: 'external/subprojects',
   default_options: [
     'buildtype=release',
     'cpp_std=c++17',
@@ -12,6 +13,42 @@ project(
 )
 
 fs = import('fs')
+python_module = import('python')
+py = python_module.find_installation(pure: false)
+
+vendor_lock_python = python_module.find_installation(required: true)
+vendor_lock_script = files('tools/external_manifest.py')
+
+vendor_lock_configure_check = run_command(
+  vendor_lock_python,
+  vendor_lock_script,
+  'verify',
+  check: false,
+)
+
+external_integrity_check = custom_target(
+  'external-integrity',
+  output: 'external-integrity.stamp',
+  command: [
+    vendor_lock_python,
+    vendor_lock_script,
+    'verify',
+    '--stamp',
+    '@OUTPUT@',
+  ],
+  build_by_default: true,
+  build_always_stale: true,
+)
+
+if vendor_lock_configure_check.returncode() != 0
+  error(
+    'External dependency integrity check failed:\n' +
+    vendor_lock_configure_check.stdout() +
+    vendor_lock_configure_check.stderr()
+  )
+endif
+
+message(vendor_lock_configure_check.stdout())
 
 cpp = meson.get_compiler('cpp')
 
@@ -158,8 +195,6 @@ if get_option('benchmarks').enabled()
     )
     found_benchmark = benchmark_dep.found()
 endif
-
-py = import('python').find_installation(pure: false)
 
 # build the libopenpivcore library
 subdir('openpiv')
