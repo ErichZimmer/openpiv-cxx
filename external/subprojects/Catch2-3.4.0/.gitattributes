@@ -20,3 +20,6 @@
 single_include/**/*.hpp eol=lf
 # Also keep the LICENCE file with LFs for the same reason
 LICENCE.txt eol=lf
+
+# OpenPIV vendor lock: preserve committed bytes on every platform.
+* -text !eol
