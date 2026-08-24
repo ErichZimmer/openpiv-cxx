@@ -6,9 +6,12 @@ TAGS
 *.so
 *.dll
 *.lib
+*.pyd
 *.exp
+*.ipynb_checkpoints*
 .vs/
 .vscode/
 .idea/
+external-manifest.json
 tests/
 builddir/
