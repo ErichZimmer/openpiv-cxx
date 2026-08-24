@@ -1,7 +1,3 @@
-TAGS
-*~
-*#*#
-*.#*
 *.o
 *.so
 *.dll
@@ -13,5 +9,4 @@ TAGS
 .vscode/
 .idea/
 external-manifest.json
-tests/
 builddir/
