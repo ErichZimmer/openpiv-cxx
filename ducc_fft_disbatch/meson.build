@@ -32,6 +32,13 @@ duccfft_highway_inc = include_directories(
   is_system: true,
 )
 
+# Prevents linker errors from unsupported SIMD instructions on macOS
+if host_machine.system() == 'darwin' and cpp.get_id() == 'gcc'
+  duccfft_cpp_args += [
+    duccfft_define_prefix + 'HWY_DISABLED_TARGETS=HWY_AVX10_2',
+  ]
+endif
+
 duccfft_lib = shared_library(
   'duccfft',
   files(
