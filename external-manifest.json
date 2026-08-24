@@ -1698,8 +1698,8 @@
       "size": 365
     },
     "subprojects/Catch2-3.4.0/.gitattributes": {
-      "sha256": "fa5b21b74c4ac22723b8fbbe43e748513afa569bdee9ce6de9f1158ea73f70a3",
-      "size": 613
+      "sha256": "15bd4f7544f13f8ea5569af154d8fb66e3a0045b16cece206f52e4ad846b8c92",
+      "size": 693
     },
     "subprojects/Catch2-3.4.0/.github/FUNDING.yml": {
       "sha256": "9d02dab829706d2192592a07a77f614d23b50f73df14def9dbbbae0db979cc07",
@@ -1750,8 +1750,8 @@
       "size": 560
     },
     "subprojects/Catch2-3.4.0/.meson-subproject-wrap-hash.txt": {
-      "sha256": "2930a1bee0c7989b945609bd7d050d02b82ed1e03ce480b0ee98b05ed735277c",
-      "size": 66
+      "sha256": "49cac01825e50204d2a028bdabb8511b53d3938d7ab15e828956dcd8fd38ff60",
+      "size": 65
     },
     "subprojects/Catch2-3.4.0/BUILD.bazel": {
       "sha256": "2c87b01920805a47099c3cb5af0b793476b6492db88dc647898787780237103f",
