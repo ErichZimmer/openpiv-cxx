@@ -49,6 +49,7 @@ allow-windows-internal-shared-libs = true
 
 [tool.meson-python.args]
 setup = [
+  "--wrap-mode=nodownload",
   "-Dbuild_wrapper=true",
   "-Ddisable_image_loaders=true",
   "-Dtests=false",
