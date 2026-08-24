@@ -150,7 +150,7 @@ bool fit_log_safe(
     const ImageT<ContainedT>& im,
     int32_t peak_radius
 ) {
-    const uint332_t peak_width = 2*peak_radius + 1;
+    const uint32_t peak_width = 2*peak_radius + 1;
 
     if ( im.size() != size{peak_width, peak_width} )
         exception_builder<std::runtime_error>() << "fit_log_safe: input must be nxn where n=" << peak_width;
