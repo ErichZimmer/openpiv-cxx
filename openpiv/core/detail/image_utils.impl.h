@@ -82,7 +82,11 @@ template < template<typename> class ImageT,
            typename ReturnT,
            typename
            >
-ReturnT find_peaks_brute( const ImageT<ContainedT>& im, uint16_t num_peaks, uint32_t peak_radius ){
+ReturnT find_peaks_brute(
+    const ImageT<ContainedT>& im, 
+    uint16_t num_peaks,
+    uint32_t peak_radius
+) {
     ReturnT result;
     const auto result_w = 2*peak_radius + 1;
     const auto result_h = result_w;
@@ -146,7 +150,7 @@ bool fit_log_safe(
     const ImageT<ContainedT>& im,
     int32_t peak_radius
 ) {
-    const auto peak_width = 2*peak_radius + 1;
+    const uint332_t peak_width = 2*peak_radius + 1;
 
     if ( im.size() != size{peak_width, peak_width} )
         exception_builder<std::runtime_error>() << "fit_log_safe: input must be nxn where n=" << peak_width;
