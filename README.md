@@ -290,7 +290,7 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
     * [ ] apply kernel in Fourier space
     * [x] use SIMD?
     * [x] real -> complex FFT/correlation of real data
-    * [ ] normalized minimum quadratic differences (very robust)
+    * [x] normalized minimum quadratic differences (very robust)
   * direct correlation
     * [ ] full window correlation
     * [ ] partial window correlation (e.g., 3x3 correlation for enhancing FFT results)
