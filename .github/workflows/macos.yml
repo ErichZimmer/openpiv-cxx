@@ -1,0 +1,256 @@
+name: macOS compiler tests
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gcc_python64:
+    name: GCC 15, x86-64, Python 3.12
+    runs-on: macos-15-intel
+    env:
+      CC: gcc-15
+      CXX: g++-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Deduplicate meson-python macOS RPATHs
+        run: |
+          tool_dir="$RUNNER_TEMP/openpiv-tools"
+          mkdir -p "$tool_dir"
+
+          cat > "$tool_dir/install_name_tool" <<'SH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          real_tool=/usr/bin/install_name_tool
+
+          if [[ $# -eq 4 && $1 == "-rpath" ]]; then
+            old_rpath=$2
+            new_rpath=$3
+            binary=$4
+            load_commands=$(/usr/bin/otool -l "$binary")
+
+            if /usr/bin/grep -Fq -- \
+              "path $new_rpath (offset" <<< "$load_commands"; then
+              exec "$real_tool" \
+                -delete_rpath "$old_rpath" "$binary"
+            fi
+          fi
+
+          exec "$real_tool" "$@"
+          SH
+
+          chmod +x "$tool_dir/install_name_tool"
+          echo "$tool_dir" >> "$GITHUB_PATH"
+
+      - name: Build, repair, and install Python wheel
+        run: |
+          shopt -s nullglob
+
+          "$CXX" --version
+          python -m pip install --upgrade pip build delocate
+          python -m build --wheel --outdir tmp-gcc -Cbuild-dir=build-gcc
+
+          built_wheels=(tmp-gcc/*.whl)
+          test "${#built_wheels[@]}" -eq 1
+
+          DYLD_LIBRARY_PATH="$PWD/build-gcc/ducc_fft_disbatch:$PWD/build-gcc/openpiv" \
+            delocate-wheel --require-archs x86_64 -w wheels-gcc -v "${built_wheels[0]}"
+
+          repaired_wheels=(wheels-gcc/*.whl)
+          test "${#repaired_wheels[@]}" -eq 1
+          python -m pip install --force-reinstall "${repaired_wheels[0]}"
+
+      - name: Meson log
+        if: ${{ failure() }}
+        run: |
+          if [[ -f build-gcc/meson-logs/meson-log.txt ]]; then
+            cat build-gcc/meson-logs/meson-log.txt
+          fi
+
+      - name: Import Python extension
+        run: |
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+
+  clang_python64:
+    name: Apple Clang, x86-64, Python 3.12
+    runs-on: macos-15-intel
+    env:
+      CC: /usr/bin/clang
+      CXX: /usr/bin/clang++
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Deduplicate meson-python macOS RPATHs
+        run: |
+          tool_dir="$RUNNER_TEMP/openpiv-tools"
+          mkdir -p "$tool_dir"
+
+          cat > "$tool_dir/install_name_tool" <<'SH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          real_tool=/usr/bin/install_name_tool
+
+          if [[ $# -eq 4 && $1 == "-rpath" ]]; then
+            old_rpath=$2
+            new_rpath=$3
+            binary=$4
+            load_commands=$(/usr/bin/otool -l "$binary")
+
+            if /usr/bin/grep -Fq -- \
+              "path $new_rpath (offset" <<< "$load_commands"; then
+              exec "$real_tool" \
+                -delete_rpath "$old_rpath" "$binary"
+            fi
+          fi
+
+          exec "$real_tool" "$@"
+          SH
+
+          chmod +x "$tool_dir/install_name_tool"
+          echo "$tool_dir" >> "$GITHUB_PATH"
+
+      - name: Build, repair, and install Python wheel
+        run: |
+          shopt -s nullglob
+
+          "$CXX" --version
+          python -m pip install --upgrade pip build delocate
+          python -m build --wheel --outdir tmp-clang -Cbuild-dir=build-clang
+
+          built_wheels=(tmp-clang/*.whl)
+          test "${#built_wheels[@]}" -eq 1
+
+          DYLD_LIBRARY_PATH="$PWD/build-clang/ducc_fft_disbatch:$PWD/build-clang/openpiv" \
+            delocate-wheel --require-archs x86_64 -w wheels-clang -v "${built_wheels[0]}"
+
+          repaired_wheels=(wheels-clang/*.whl)
+          test "${#repaired_wheels[@]}" -eq 1
+          python -m pip install --force-reinstall "${repaired_wheels[0]}"
+
+      - name: Meson log
+        if: ${{ failure() }}
+        run: |
+          if [[ -f build-clang/meson-logs/meson-log.txt ]]; then
+            cat build-clang/meson-logs/meson-log.txt
+          fi
+
+      - name: Import Python extension
+        run: |
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+
+  llvm_python64:
+    name: LLVM Clang 18, x86-64, Python 3.12
+    runs-on: macos-15-intel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Setup LLVM compilers
+        run: |
+          llvm_prefix="$(brew --prefix llvm@18)"
+          echo "CC=$llvm_prefix/bin/clang" >> "$GITHUB_ENV"
+          echo "CXX=$llvm_prefix/bin/clang++" >> "$GITHUB_ENV"
+
+      - name: Deduplicate meson-python macOS RPATHs
+        run: |
+          tool_dir="$RUNNER_TEMP/openpiv-tools"
+          mkdir -p "$tool_dir"
+
+          cat > "$tool_dir/install_name_tool" <<'SH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          real_tool=/usr/bin/install_name_tool
+
+          if [[ $# -eq 4 && $1 == "-rpath" ]]; then
+            old_rpath=$2
+            new_rpath=$3
+            binary=$4
+            load_commands=$(/usr/bin/otool -l "$binary")
+
+            if /usr/bin/grep -Fq -- \
+              "path $new_rpath (offset" <<< "$load_commands"; then
+              exec "$real_tool" \
+                -delete_rpath "$old_rpath" "$binary"
+            fi
+          fi
+
+          exec "$real_tool" "$@"
+          SH
+
+          chmod +x "$tool_dir/install_name_tool"
+          echo "$tool_dir" >> "$GITHUB_PATH"
+
+      - name: Build, repair, and install Python wheel
+        run: |
+          shopt -s nullglob
+
+          "$CXX" --version
+          python -m pip install --upgrade pip build delocate
+          python -m build --wheel --outdir tmp-llvm -Cbuild-dir=build-llvm
+
+          built_wheels=(tmp-llvm/*.whl)
+          test "${#built_wheels[@]}" -eq 1
+
+          DYLD_LIBRARY_PATH="$PWD/build-llvm/ducc_fft_disbatch:$PWD/build-llvm/openpiv" \
+            delocate-wheel --require-archs x86_64 -w wheels-llvm -v "${built_wheels[0]}"
+
+          repaired_wheels=(wheels-llvm/*.whl)
+          test "${#repaired_wheels[@]}" -eq 1
+          python -m pip install --force-reinstall "${repaired_wheels[0]}"
+
+      - name: Meson log
+        if: ${{ failure() }}
+        run: |
+          if [[ -f build-llvm/meson-logs/meson-log.txt ]]; then
+            cat build-llvm/meson-logs/meson-log.txt
+          fi
+
+      - name: Import Python extension
+        run: |
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
