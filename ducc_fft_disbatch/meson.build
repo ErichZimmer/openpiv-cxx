@@ -22,8 +22,15 @@ else
 endif
 
 duccfft_public_inc = include_directories('.')
-duccfft_ducc_inc = include_directories('../external/ducc/src')
-duccfft_highway_inc = include_directories('../external/highway')
+duccfft_ducc_inc = include_directories(
+  '../external/ducc/src',
+  is_system: true,
+)
+
+duccfft_highway_inc = include_directories(
+  '../external/highway',
+  is_system: true,
+)
 
 duccfft_lib = shared_library(
   'duccfft',
