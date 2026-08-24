@@ -1,1 +1,0 @@
-This folder is for fetching dependencies. All content should be ignored except for *.wrap files. For dependencies that are not in the wrap database, create wrap files using `wrap-git`.
