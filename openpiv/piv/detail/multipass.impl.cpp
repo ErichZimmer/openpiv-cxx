@@ -44,6 +44,7 @@ namespace openpiv::piv
         const core::grid_data&   old_data,
         std::array<uint32_t, 2> window_size,
         std::array<uint32_t, 2> overlap_size,
+        bool robust,
         deform_method method,
         deform_order order,
         int32_t k,
@@ -118,27 +119,54 @@ namespace openpiv::piv
         );
 
         // PIV on deformed images
-        auto [new_grid, new_data] = piv::process_images_standard(
-            frame_a,
-            frame_b,
-            window_size,
-            overlap_size,
-            step,
-            zero_pad,
-            centered,
-            limit_search,
-            simd,
-            threads
-        );
-
-        // Add the refined data to interpolated data
-        for (uint32_t i=0; i < new_grid.pixel_count(); i++)
+        if (robust)
         {
-            new_data.u[i] = new_data.u[i] + field_data.u[i];
-            new_data.v[i] = new_data.v[i] + field_data.v[i];
-        }
+            auto [new_grid, new_data] = piv::process_images_robust(
+                frame_a,
+                frame_b,
+                window_size,
+                overlap_size,
+                step,
+                zero_pad,
+                centered,
+                limit_search,
+                simd,
+                threads
+            );
 
-        return {std::move(new_grid), std::move(new_data)};
+            // Add the refined data to interpolated data
+            for (uint32_t i=0; i < new_grid.pixel_count(); i++)
+            {
+                new_data.u[i] = new_data.u[i] + field_data.u[i];
+                new_data.v[i] = new_data.v[i] + field_data.v[i];
+            }
+
+            return {std::move(new_grid), std::move(new_data)};
+        }
+        else
+        {
+            auto [new_grid, new_data] = piv::process_images_standard(
+                frame_a,
+                frame_b,
+                window_size,
+                overlap_size,
+                step,
+                zero_pad,
+                centered,
+                limit_search,
+                simd,
+                threads
+            );
+
+            // Add the refined data to interpolated data
+            for (uint32_t i=0; i < new_grid.pixel_count(); i++)
+            {
+                new_data.u[i] = new_data.u[i] + field_data.u[i];
+                new_data.v[i] = new_data.v[i] + field_data.v[i];
+            }
+
+            return {std::move(new_grid), std::move(new_data)};
+        }
     }
 
 } // end of namespace

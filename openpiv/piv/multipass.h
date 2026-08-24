@@ -25,6 +25,7 @@ namespace openpiv::piv
         const core::grid_data&   old_data,
         std::array<uint32_t, 2> window_size,
         std::array<uint32_t, 2> overlap_size,
+        bool robust,
         deform_method method,
         deform_order order,
         int32_t k,

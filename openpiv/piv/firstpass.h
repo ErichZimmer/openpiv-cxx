@@ -29,18 +29,17 @@ namespace openpiv::piv
         int32_t threads
     );
 
-    /*
-    std::tuple<core::grid_coords, core::grid_data> process_images_nsqe(
-        ImageT image_a,
-        ImageT image_b,
+    DLL_EXPORT std::tuple<core::grid_coords, core::grid_data> process_images_robust(
+        const ImageT& image_a,
+        const ImageT& image_b,
         std::array<uint32_t, 2> window_size,
         std::array<uint32_t, 2> overlap_size,
         bool step,
         bool zero_pad,
         bool centered,
         bool limit_search,
+        bool simd,
         int32_t threads
     );
-    */
 
 } // end of namespace

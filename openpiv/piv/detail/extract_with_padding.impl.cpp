@@ -11,7 +11,7 @@
 #include "piv/correlation_utils.h"
 
 
-namespace openpiv::piv
+namespace openpiv::piv::detail
 {
     using namespace openpiv::core;
 

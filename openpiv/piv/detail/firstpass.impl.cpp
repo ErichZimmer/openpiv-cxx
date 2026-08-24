@@ -50,19 +50,34 @@ namespace openpiv::piv
     ){
         const uint32_t min_window_size = 8;
         const uint32_t max_window_size = 1024;
+        const uint32_t min_search_size = 16; // if window_size is below this, disable limit_search
 
         // Make sure that window sizes are some sane value
-        if ((window_size[0] > max_window_size) || (window_size[1] > max_window_size))
-            core::exception_builder<std::runtime_error>() << "window size must be less than " << max_window_size << " pixels";
+        if ((window_size[0] > max_window_size) ||
+            (window_size[1] > max_window_size))
+        {
+            core::exception_builder<std::runtime_error>()
+                << "window size must be less than "
+                << max_window_size
+                << " pixels";
+        }
 
-        if ((window_size[0] < min_window_size) || (window_size[1] < min_window_size))
-            core::exception_builder<std::runtime_error>() << "window size must be greater than " << min_window_size << " pixels";
+        if ((window_size[0] < min_window_size) ||
+            (window_size[1] < min_window_size))
+        {
+            core::exception_builder<std::runtime_error>()
+                << "window size must be greater than "
+                << min_window_size
+                << " pixels";
+        }
 
-        // assert that the window size is even. Odd stuff throughs off the offsets
         if ((window_size[0] % 2) || (window_size[1] % 2))
-            core::exception_builder<std::runtime_error>() << "window size must be even";
+        {
+            core::exception_builder<std::runtime_error>()
+                << "window size must be even";
+        }
 
-        // Setup thread counts - 1 =  no threading; 0 = auto-select thread count; >1 = manually select thread count
+        // Setup thread counts; 1 =  no threading; 0 = auto-select thread count; >1 = manually select thread count
         uint32_t thread_count = std::thread::hardware_concurrency()-1;
         if ((threads > 0) && (static_cast<uint32_t>(threads) < thread_count))
             thread_count = static_cast<uint32_t>(threads);
@@ -74,22 +89,22 @@ namespace openpiv::piv
         }
 
         // create a grid for processing
-        auto ia_size = core::size{window_size[0], window_size[1]};
-        auto grid = core::generate_cartesian_grid(
+        const auto ia_size = core::size{window_size[0], window_size[1]};
+        const auto grid = core::generate_cartesian_grid(
             image_b.size(), 
             ia_size, 
             overlap_size,
             centered
         );
 
-        auto field_shape = core::generate_grid_shape(
+        const auto field_shape = core::generate_grid_shape(
             image_b.size(), 
             ia_size, 
             overlap_size
         );
 
         // Zero pad by 2N,if requested
-        auto corr_window_size = core::size{window_size[0], window_size[1]};
+        auto corr_window_size = ia_size;
         if (zero_pad)
             corr_window_size = core::size{window_size[0] * 2, window_size[1] * 2};
 
@@ -101,7 +116,7 @@ namespace openpiv::piv
         auto duccfft_correlator = &algos::DuccFFT<FloatT>::cross_correlate_real<core::image, ContainerT>;
 
 
-        // Unitform weights for FFT correlation
+        // Uniform weights for FFT correlation
         // TODO: Add Gaussian weights
         auto corr_weights = ImageT(corr_window_size);
         
@@ -132,8 +147,7 @@ namespace openpiv::piv
             );
 */
 
-            // Currently, little variation was seen in gaussian vs linear. May go back to a simpler lienar correlation format
-
+            // Currently, Gaussian weighting seems a little worse than zero-padding/linear correlation
             core::apply(
                 corr_weights,
                 [
@@ -184,7 +198,6 @@ namespace openpiv::piv
         auto processor = [
             &image_a,
             &image_b,
-            &corr_window_size,
             &corr_weights,
             &pocketfft_algo,
             &pocketfft_correlator,
@@ -193,6 +206,7 @@ namespace openpiv::piv
             simd,
             zero_pad,
             limit_search,
+            min_search_size,
             &field_coords,
             &field_data
         ]( size_t i, const core::rect& ia, scratch_memory& scratch_local)
@@ -203,10 +217,10 @@ namespace openpiv::piv
             auto& iw_b = scratch_local.b;
 
             // Get relavant data from the images
-            extract_with_padding(image_a, extract_window, iw_a);
-            extract_with_padding(image_b, extract_window, iw_b);
+            detail::extract_with_padding(image_a, extract_window, iw_a);
+            detail::extract_with_padding(image_b, extract_window, iw_b);
 
-            // Standardize the image
+            // Mean subtraction to improve cross-correlation quality
             auto view_a_mean = algos::find_mean(iw_a);
             auto view_b_mean = algos::find_mean(iw_b);
 
@@ -216,7 +230,7 @@ namespace openpiv::piv
             iw_a = iw_a * corr_weights;
             iw_b = iw_b * corr_weights;
 
-            // On gaussian weights, re center around mean
+            // On gaussian weights, re-center around mean
 /*
             if (zero_pad)
             {
@@ -239,14 +253,35 @@ namespace openpiv::piv
             if (zero_pad)
                 dilation_ratio *= 0.5;
             
-            if (limit_search)
+            if (
+                limit_search && 
+                (ia.width() >= min_search_size || ia.height() >= min_search_size)
+            )
                 dilation_ratio *= 0.5;
 
             auto valid_corr = core::create_image_view( output, output.rect().dilate(dilation_ratio) );
 
             // Get mean of valid_corr to calculate s2n ratio
             auto corr_mean = algos::find_mean(valid_corr);
-            
+
+            // Compute denominator to normalize correlatioon plane
+            ContainerT energy_a = 0.0;
+            ContainerT energy_b = 0.0;
+
+            for (std::size_t i = 0; i < iw_a.pixel_count(); ++i)
+            {
+                const ContainerT a = iw_a[i].v;
+                const ContainerT b = iw_b[i].v;
+
+                energy_a = energy_a + (a * a);
+                energy_b = energy_b + (b * b);
+            }
+
+            const ContainerT denominator =
+                static_cast<ContainerT>(iw_a.pixel_count()) *
+                std::sqrt(energy_a) *
+                std::sqrt(energy_b);
+
             // find peaks
             // core::peaks_t<core::g_f64> peaks;
             constexpr uint16_t num_peaks = 2;
@@ -278,14 +313,19 @@ namespace openpiv::piv
             
             // Get subpixel information and add it to vector field data
             auto peak = peaks[0];
-            auto peak_location = core::fit_simple_gaussian( peak );
+            core::point2<core::grid_coords_t> peak_location{};
+
+            if ( core::fit_log_safe(peak, radius) )
+                peak_location = core::fit_simple_gaussian( peak );
+            else
+                peak_location = core::fit_simple_parabolic( peak );
 
             // u and v signs are swapped to match openpiv
             field_data.u[i] = -(midpoint[0] - (bl[0] + peak_location[0]));
             field_data.v[i] = -(midpoint[1] - (bl[1] + peak_location[1]));
             field_data.s2n[i]  = peaks[0][{1, 1}] / corr_mean;
             field_data.p2p[i]  = (peaks.size() > min_peak_count) ? peaks[0][{1, 1}] / peaks[1][{1, 1}] : 1.0;
-            field_data.peak[i] = peaks[0][{1, 1}];
+            field_data.peak[i] = peaks[0][{1, 1}] / denominator;
         };
 
         if (thread_count > 1)
