@@ -49,8 +49,8 @@ namespace openpiv::algos {
         struct data_t
         {
             image_cf_t output;
-            std::vector<std_complex_t> fft_buffer_a;
             image_cf_t temp;
+            std::vector<std_complex_t> fft_buffer_a;
             std::vector<std_complex_t> fft_buffer_b;
             std::vector<value_t> real_buffer;
         };
@@ -76,7 +76,7 @@ namespace openpiv::algos {
             }
 
             data_t data;
-            const std::size_t N = static_cast<std::size_t>( size_.area() );
+            const size_t N = static_cast<size_t>( size_.area() );
             data.output.resize( size_ );
             data.temp.resize( size_ );
             data.fft_buffer_a.resize( N );
@@ -87,18 +87,18 @@ namespace openpiv::algos {
             return result;
         }
 
-        std::size_t spectrum_size() const
+        size_t spectrum_size() const
         {
-            return static_cast<std::size_t>( size_.width() )
-                 * (static_cast<std::size_t>( size_.height() ) / 2 + 1);
+            return static_cast<size_t>( size_.width() )
+                 * (static_cast<size_t>( size_.height() ) / 2 + 1);
         }
 
         static void copy_complex_to_image(
             const std::vector<std_complex_t>& input,
             image_cf_t& output,
-            std::size_t count )
+            size_t count )
         {
-            for ( std::size_t i = 0; i < count; ++i )
+            for ( size_t i = 0; i < count; ++i )
                 output[i] = core::complex<value_t>{ input[i].real(), input[i].imag() };
         }
 
@@ -106,8 +106,8 @@ namespace openpiv::algos {
         DuccFFT( const core::size& size )
             : size_(size)
             , shape_{
-                static_cast<std::size_t>( size.height() ),
-                static_cast<std::size_t>( size.width() )
+                static_cast<size_t>( size.height() ),
+                static_cast<size_t>( size.width() )
               }
         { }
 
@@ -130,8 +130,8 @@ namespace openpiv::algos {
             cache().output.resize( input.size() );
 
             auto& data = cache();
-            const std::size_t N = static_cast<std::size_t>( size_.area() );
-            for ( std::size_t i = 0; i < N; ++i )
+            const size_t N = static_cast<size_t>( size_.area() );
+            for ( size_t i = 0; i < N; ++i )
             {
                 data.fft_buffer_a[i] = std_complex_t{
                     data.temp[i].real,
@@ -177,10 +177,10 @@ namespace openpiv::algos {
             cache().temp.resize( b.size() );
 
             auto& data = cache();
-            const std::size_t N = static_cast<std::size_t>( size_.area() );
-            const std::size_t spectrum_N = spectrum_size();
+            const size_t N = static_cast<size_t>( size_.area() );
+            const size_t spectrum_N = spectrum_size();
 
-            for ( std::size_t i = 0; i < N; ++i )
+            for ( size_t i = 0; i < N; ++i )
                 data.real_buffer[i] = static_cast<value_t>( a[i].v );
 
             ducc_fft::r2c(
@@ -191,7 +191,7 @@ namespace openpiv::algos {
                 d == direction::FORWARD,
                 value_t{1} );
 
-            for ( std::size_t i = 0; i < N; ++i )
+            for ( size_t i = 0; i < N; ++i )
                 data.real_buffer[i] = static_cast<value_t>( b[i].v );
 
             ducc_fft::r2c(
@@ -233,8 +233,8 @@ namespace openpiv::algos {
             }
 
             auto& data = cache();
-            const std::size_t spectrum_N = spectrum_size();
-            for ( std::size_t i = 0; i < spectrum_N; ++i )
+            const size_t spectrum_N = spectrum_size();
+            for ( size_t i = 0; i < spectrum_N; ++i )
             {
                 data.fft_buffer_a[i] = std_complex_t{
                     static_cast<value_t>( in[i].real ),
@@ -251,11 +251,72 @@ namespace openpiv::algos {
                 value_t{1} );
 
             OutT out{ in.size() };
-            const std::size_t N = static_cast<std::size_t>( size_.area() );
-            for ( std::size_t i = 0; i < N; ++i )
+            const size_t N = static_cast<size_t>( size_.area() );
+            for ( size_t i = 0; i < N; ++i )
                 out[i] = static_cast<ValueT>( data.real_buffer[i] );
 
             return out;
+        }
+
+        template < template <typename> class ImageT,
+                   typename ContainedT,
+                   typename = typename std::enable_if_t<
+                       is_imagetype_v<ImageT<ContainedT>> &&
+                       is_real_mono_pixeltype_v<ContainedT>
+                       >
+                  >
+        void
+        transform_real_inplace( const ImageT<ContainedT>& a,
+                                const ImageT<ContainedT>& b,
+                                direction d = direction::FORWARD ) const
+        {
+            DECLARE_ENTRY_EXIT
+            if ( a.size() != size_ || b.size() != size_ )
+            {
+                exception_builder< std::runtime_error >()
+                    << "image size is different from expected: " << a.size()
+                    << ", " << size_;
+            }
+
+            auto& data = cache();
+            const size_t N = static_cast<size_t>( size_.area() );
+
+            for ( size_t i = 0; i < N; ++i )
+                data.real_buffer[i] = static_cast<value_t>( a[i].v );
+
+            ducc_fft::r2c(
+                data.real_buffer.data(),
+                data.fft_buffer_a.data(),
+                shape_,
+                axes_,
+                d == direction::FORWARD,
+                value_t{1} );
+
+            for ( size_t i = 0; i < N; ++i )
+                data.real_buffer[i] = static_cast<value_t>( b[i].v );
+
+            ducc_fft::r2c(
+                data.real_buffer.data(),
+                data.fft_buffer_b.data(),
+                shape_,
+                axes_,
+                d == direction::FORWARD,
+                value_t{1} );
+        }
+
+        void
+        transform_real_inplace( direction d ) const
+        {
+            DECLARE_ENTRY_EXIT
+            auto& data = cache();
+
+            ducc_fft::c2r(
+                data.fft_buffer_a.data(),
+                data.real_buffer.data(),
+                shape_,
+                axes_,
+                d == direction::FORWARD,
+                value_t{1} );
         }
 
         template < template <typename> class ImageT,
@@ -286,17 +347,70 @@ namespace openpiv::algos {
                        is_imagetype_v<ImageT<ContainedT>> &&
                        is_real_mono_pixeltype_v<ContainedT>
                        >
-                   >
+                  >
         OutT
         cross_correlate_real( const ImageT<ContainedT>& a,
-                              const ImageT<ContainedT>& b ) const
+                            const ImageT<ContainedT>& b ) const
         {
-            auto [a_fft, b_fft] = transform_real( a, b, direction::FORWARD );
-            a_fft = b_fft * conj( a_fft );
-            OutT output = transform_real( a_fft, direction::REVERSE );
-            swap_quadrants( output );
+            transform_real_inplace( a, b, direction::FORWARD );
 
+            // We have to manually conjugate multiply due to inplace ffts using std::vectors instread of core::images
+            auto& data = cache();
+            const size_t spectrum_N = spectrum_size();
+
+            for ( size_t i = 0; i < spectrum_N; ++i )
+            {
+                data.fft_buffer_a[i] = data.fft_buffer_b[i] * std::conj( data.fft_buffer_a[i] );
+            }
+
+            transform_real_inplace( direction::REVERSE );
+
+            OutT output{ a.size() };
+            const size_t N = static_cast<size_t>( size_.area() );
+
+            for ( size_t i = 0; i < N; ++i )
+                output[i] = static_cast<ValueT>( data.real_buffer[i] );
+
+            swap_quadrants( output );
+            
             return output;
+        }
+
+        // Inplace means do not allocate output, expect it to be passed
+        template < template <typename> class ImageT,
+                   typename ContainedT,
+                   typename ValueT = typename ContainedT::value_t,
+                   typename = typename std::enable_if_t<
+                       is_imagetype_v<ImageT<ContainedT>> &&
+                       is_real_mono_pixeltype_v<ContainedT>
+                       >
+                  >
+        void
+        cross_correlate_real_inplace(
+            const ImageT<ContainedT>& a,
+            const ImageT<ContainedT>& b,
+            ImageT<ContainedT>& output
+        ) {
+            transform_real_inplace( a, b, direction::FORWARD );
+
+            // We have to manually conjugate multiply due to inplace ffts using std::vectors instread of core::images
+            auto& data = cache();
+            const size_t spectrum_N = spectrum_size();
+
+            for ( size_t i = 0; i < spectrum_N; ++i )
+            {
+                data.fft_buffer_a[i] = data.fft_buffer_b[i] * std::conj( data.fft_buffer_a[i] );
+            }
+
+            transform_real_inplace( direction::REVERSE );
+
+            output.resize( size_ );
+            const size_t N = static_cast<size_t>( size_.area() );
+
+            for ( size_t i = 0; i < N; ++i )
+                output[i] = static_cast<ValueT>( data.real_buffer[i] );
+
+            swap_quadrants( output );
         }
 
         template < template <typename> class ImageT,

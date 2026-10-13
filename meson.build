@@ -1,11 +1,12 @@
 project(
   'OpenPIV-c++',
   'cpp',
-  version: '0.2.0',
+  version: '0.3.0',
   license: 'GPL-3',
-  meson_version: '>= 1.1.0',
+  meson_version: '>= 1.4.0',
   subproject_dir: 'external/subprojects',
   default_options: [
+    'wrap_mode=nodownload',
     'buildtype=release',
     'cpp_std=c++17',
     'warning_level=3'
@@ -62,7 +63,6 @@ endif
 
 if cxx_compiler != 'msvc'
   _gnu_args = cpp.get_supported_arguments(
-    '-ffast-math',
     '-Wno-unknown-pragmas',
     '-mthreads'
   )

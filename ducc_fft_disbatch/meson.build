@@ -43,6 +43,7 @@ duccfft_lib = shared_library(
   'duccfft',
   files(
     'ducc_fft.cc',
+    '../external/ducc/src/ducc0/infra/string_utils.cc',
     '../external/ducc/src/ducc0/infra/threading.cc',
     '../external/highway/hwy/targets.cc',
   ),
@@ -61,8 +62,6 @@ duccfft_dep = declare_dependency(
   link_with: duccfft_lib,
   include_directories: duccfft_public_inc,
 )
-
-install_headers('ducc_fft.h')
 
 message('libduccfft: compiling every target Highway considers attainable')
 message('libduccfft: Highway uses runtime dispatch where supported and the best static or scalar fallback elsewhere')

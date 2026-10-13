@@ -282,6 +282,27 @@ namespace openpiv::algos {
             return output;
         }
 
+        // Inplace means do not allocate output, ecpect it to be passed
+        template < template <typename> class ImageT,
+                   typename ContainedT,
+                   typename ValueT = typename ContainedT::value_t,
+                   typename = typename std::enable_if_t<
+                       is_imagetype_v<ImageT<ContainedT>> &&
+                       is_real_mono_pixeltype_v<ContainedT>
+                       >
+                   >
+        void
+        cross_correlate_real_inplace(
+            const ImageT<ContainedT>& a,
+            const ImageT<ContainedT>& b,
+            ImageT<ContainedT>& output
+        ) {
+            auto [a_fft, b_fft] = transform_real( a, b, direction::FORWARD );
+            a_fft = b_fft * conj( a_fft );
+            output = transform_real( a_fft, direction::REVERSE );
+            swap_quadrants( output );
+        }
+
         template < template <typename> class ImageT,
                    typename ContainedT,
                    typename = typename std::enable_if_t< is_imagetype_v<ImageT<ContainedT>> >

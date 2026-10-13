@@ -30,6 +30,7 @@ void add_validate_peak_ratio(py::module &);
 void add_validate_range(py::module &);
 void add_validate_s2n(py::module &);
 void add_validate_z_score(py::module &);
+void add_validate_replacement(py::module &);
 
 PYBIND11_MODULE(pyopenpivcore, m) {
     m.doc() = R"pbdoc(
@@ -71,6 +72,7 @@ PYBIND11_MODULE(pyopenpivcore, m) {
     add_validate_range(m);
     add_validate_s2n(m);
     add_validate_z_score(m);
+    add_validate_replacement(m);
 
 
 #ifdef VERSION_INFO

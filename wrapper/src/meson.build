@@ -14,6 +14,7 @@ sources = [
     'interp/interp2d.cpp',
     'piv/evaluation_standard.cpp',
     'piv/piv_enums.cpp',
+    'validate/replace_nans.cpp',
     'validate/validate_difference.cpp',
     'validate/validate_median.cpp',
     'validate/validate_normalized_median.cpp',

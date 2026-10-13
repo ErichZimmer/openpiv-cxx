@@ -133,7 +133,8 @@ To initiate the build process, run the following command from the root directory
 
  Windows:
 Make sure delvewheel is installed (e.g., `pip install delvewheel`). Then run this command:
-* `delvewheel repair tmp/*.whl --add-path ./builddir/openpiv --add-path ./builddir/ducc_fft_disbatch -w ./wheelscls`
+* `delvewheel repair tmp/*.whl --add-path ./builddir/openpiv --add-path ./builddir/ducc_fft_disbatch -w ./wheels
+`
 
 Linux/Unix:
 Make sure auditwheel is installed (e.g., `pip install auditwheel`). Then run this command:
@@ -290,11 +291,7 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
     * [ ] apply kernel in Fourier space
     * [x] use SIMD?
     * [x] real -> complex FFT/correlation of real data
-    * [ ] normalized minimum quadratic differences (very robust)
-  * direct correlation
-    * [ ] full window correlation
-    * [ ] partial window correlation (e.g., 3x3 correlation for enhancing FFT results)
-    * [ ] use SIMD?
+    * [x] normalized minimum quadratic differences (very robust)
   * image deformation
     * [x] shifted linear image deformation interpolation (same as first degree polynomial for my impl)
     * [x] polynomial interpolation (lookup tables-based, so super fast!!)
@@ -306,13 +303,12 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
     * [x] 3 point parabolic peak fit
     * [x] 3 point centroid peak fit
     * [x] 3x3 Gaussian closed form solution
-    * [ ] nxn least squares Gaussian peak fit (optimized via pseudo-inverse)
+    * [ ] nxn least squares Gaussian peak fit (optimized via pseudo-inverse; pinv can be pre-computed for speed and simplicity)
     * [ ] nxn non-linear Gaussian peak fit (optimized via Levenberg-Marquardt or something similar)
     * [ ] nxn centroid peak fit (can be used for calibration marker detection)
   * multi-pass PIV
     * [x] First pass w/ multi-threading
     * [x] Multi-pass image deform w/ multi-threading
-    * [ ] Failed correlations can use larger correlation window or imputation
 * image processing
   * filters
     * [ ] change image_view to use array of pointers for each row?
@@ -322,7 +318,7 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
     * [ ] contrast stretch filter (based on local percentile kernels)
     * [ ] median filter
     * [ ] min/max normalization filter
-    * [ ] smoothn from OpenPIV-Python (requires L-BFGS-B impl)
+    * [ ] smoothn from OpenPIV-Python (w/o nonlinear smooth param optimization)
   * adjustment
     * [ ] crop (region of interest/ROI)
     * [ ] skew
@@ -336,14 +332,16 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
     * [ ] read mask image
     * [ ] write mask image
     * [ ] automatically create mask image
-  * validation
-   * [x] local median
-   * [x] local normalized median
-   * [x] local difference
-   * [x] z_score
-   * [x] u/v range
-   * [x] peak to peak ratio
-   * [x] signal to noise ratio
+* validation
+  * [x] local median
+  * [x] local normalized median
+  * [x] local difference
+  * [x] z_score
+  * [x] u/v range
+  * [x] peak to peak ratio
+  * [x] signal to noise ratio
+  * [x] secondary peak substitution
+  * [x] impute nans (iterative solver; spring analogy alternative)
 * examples
   * [x] parallel cross-correlate
   * [x] image processing

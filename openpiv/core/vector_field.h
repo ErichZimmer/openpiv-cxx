@@ -14,6 +14,7 @@ namespace openpiv::core {
     {
         VALID = 0,
         INVALID,
+        SUBSTITUTED,
         INTERPOLATED,
         MASKED
     };
@@ -26,13 +27,17 @@ namespace openpiv::core {
         core::image<ContainedT> s2n;
         core::image<ContainedT> p2p;
         core::image<ContainedT> peak;
+        core::image<ContainedT> u2;
+        core::image<ContainedT> v2;
+        core::image<ContainedT> s2n2;
+        core::image<ContainedT> peak2;
         core::image<core::g_8> flag;
 
         vector_point_data(uint32_t w, uint32_t h)
-        : u(w, h), v(w, h), s2n(w, h), p2p(w, h), peak{w, h}, flag{w, h}{}
+        : u(w, h), v(w, h), s2n(w, h), p2p(w, h), peak{w, h}, u2(w, h), v2(w, h), s2n2(w, h),  peak2{w, h}, flag{w, h}{}
 
         vector_point_data(core::size s)
-        : u(s), v(s), s2n(s), p2p(s), peak(s), flag(s) {}
+        : u(s), v(s), s2n(s), p2p(s), peak(s), u2(s), v2(s), s2n2(s), peak2(s), flag(s) {}
     };
 
     template < typename ContainedT>

@@ -14,7 +14,7 @@ namespace openpiv::validate
     template <
         typename ContainedT,
         typename ValueT = typename ContainedT::value_t,
-        typename ResultT = core::image<g_8>,
+        typename ResultT = core::image<core::g_8>,
         typename = typename std::enable_if_t<
             is_real_mono_pixeltype_v<ContainedT> &&
             std::is_floating_point_v<ValueT>

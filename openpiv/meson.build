@@ -10,8 +10,8 @@ openpiv_src = [
     'algos/duccfft_backend.cpp',
     'piv/detail/deformation.impl.cpp',
     'piv/detail/firstpass.impl.cpp',
-    'piv/detail/multipass.impl.cpp',
     'piv/detail/robust.impl.cpp',
+    'piv/detail/multipass.impl.cpp',
     'piv/detail/extract_with_padding.impl.cpp'
 ]
 

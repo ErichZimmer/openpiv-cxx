@@ -37,6 +37,10 @@
       "sha256": "b992c2cc30a4fc0f4cc7eff709dbc87bc27402f11777266d6268d91aaad55ebc",
       "size": 15103
     },
+    "ducc/src/ducc0/infra/string_utils.cc": {
+      "sha256": "108eccdc912128df7e7f9822b08b3abe46dcf245432f6f1a3a85163338bde78c",
+      "size": 7869
+    },
     "ducc/src/ducc0/infra/string_utils.h": {
       "sha256": "a6bf69759a3f9e8e702084f1c9866eb8ff06e15321679a8b05ff24c05623c3a7",
       "size": 4918
@@ -1748,10 +1752,6 @@
     "subprojects/Catch2-3.4.0/.gitignore": {
       "sha256": "df5c4933af4622935029dea64b334d1603c4358d1d4f32614a70343e29542073",
       "size": 560
-    },
-    "subprojects/Catch2-3.4.0/.meson-subproject-wrap-hash.txt": {
-      "sha256": "49cac01825e50204d2a028bdabb8511b53d3938d7ab15e828956dcd8fd38ff60",
-      "size": 65
     },
     "subprojects/Catch2-3.4.0/BUILD.bazel": {
       "sha256": "2c87b01920805a47099c3cb5af0b793476b6492db88dc647898787780237103f",
@@ -3849,10 +3849,6 @@
       "sha256": "055a8406301617c5f0e39f53844653d809c723c70a2cbc47011397585c1895f4",
       "size": 107
     },
-    "subprojects/cxxopts-3.0.0/.meson-subproject-wrap-hash.txt": {
-      "sha256": "9b0e38c02f0134364cac3fbb78846ed2aeaded4e557dc68e79bec95672c8ca57",
-      "size": 66
-    },
     "subprojects/cxxopts-3.0.0/.travis.yml": {
       "sha256": "d28e5ccc78ce2240e78bca34db60f8ba65169546f52459e0b3f205d45e267e2e",
       "size": 2493
@@ -3996,10 +3992,6 @@
     "subprojects/fmt-9.1.0/.gitignore": {
       "sha256": "e67f90f8db23abbedf09a5eba9a041b0a22f285495b795117001f88897e9d887",
       "size": 397
-    },
-    "subprojects/fmt-9.1.0/.meson-subproject-wrap-hash.txt": {
-      "sha256": "b4ec5f4da8fcb6d10818475bcf075848636cfdb317962e26d4e9cbcc2cc71dbb",
-      "size": 66
     },
     "subprojects/fmt-9.1.0/CMakeLists.txt": {
       "sha256": "5b277f2064eed23cbec68cde2d53b742c8efc163b6055c8a076498cf6d5d92d6",
@@ -4824,10 +4816,6 @@
     "subprojects/google-benchmark.wrap": {
       "sha256": "9c60e1d50b57b2ae4bd8dac6797f042e1277ba84f44f5b791c855563e60472b6",
       "size": 645
-    },
-    "subprojects/libjpeg-turbo-2.1.4/.meson-subproject-wrap-hash.txt": {
-      "sha256": "da306e7776d7f936c823e39ecc88ca3638d28123f43266ecdab4b63f93bb22f7",
-      "size": 66
     },
     "subprojects/libjpeg-turbo-2.1.4/BUILDING.md": {
       "sha256": "a335646dd8a84e97ed298ceb061a5459b6718e1af7e1198c68f0e58d97ab97ad",
@@ -6908,10 +6896,6 @@
     "subprojects/libtiff.wrap": {
       "sha256": "ba02df2bca085c08521651391eeaf72a0edff10e0c14c9917452ce6b13720c21",
       "size": 468
-    },
-    "subprojects/tiff-4.4.0/.meson-subproject-wrap-hash.txt": {
-      "sha256": "c0720e8a16adb6d626bdbfa23e9ca4e1b920daa4aaa6dece5fcce52b6a8ed486",
-      "size": 66
     },
     "subprojects/tiff-4.4.0/CMakeLists.txt": {
       "sha256": "06e2247f8f69538359003979863d765e5c63a63f3e1b6eb569d11f99f41cf20f",
@@ -9312,10 +9296,6 @@
     "subprojects/tiff-4.4.0/tools/tiffsplit.c": {
       "sha256": "8388563fe9a1c331936f28f588681d6255886f4ea1efb3d545f0127210d65881",
       "size": 11312
-    },
-    "subprojects/zlib-1.2.13/.meson-subproject-wrap-hash.txt": {
-      "sha256": "e25606f5d7b4e65fd16c77e1529f04a36b320b5cc697dd0b06df7be247246448",
-      "size": 66
     },
     "subprojects/zlib-1.2.13/CMakeLists.txt": {
       "sha256": "d3ea46cd350c74c21c2dd97f6d0ad354db76b2b43cc91ec1144b88267f67a588",
