@@ -201,7 +201,7 @@ namespace openpiv::piv
             );
             const auto corr_mean = algos::find_mean(valid_corr);
 
-            constexpr uint16_t num_peaks = 2;
+            constexpr uint16_t num_peaks = 3;
             constexpr uint16_t min_peak_count = 1;
             constexpr uint16_t radius = 1;
 
@@ -222,27 +222,22 @@ namespace openpiv::piv
                 bl[1] -= static_cast<int32_t>( (iw_a.height() - ia.height()) / 2 );
             }
 
-            if (peaks.size() < min_peak_count)
-            {
-                if ( peaks.size() < min_peak_count )
+            // Early escape if not enough peaks were found
+            if ( peaks.size() < min_peak_count )
             {
                 field_data.u[i]     = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
                 field_data.v[i]     = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
-                field_data.s2n[i]   = grid_data_t(0);
-                field_data.p2p[i]   = grid_data_t(0);
-                field_data.peak[i]  = grid_data_t(0);
-                field_data.u2[i]    = std::numeric_limits<core::grid_data_t::value_t>::quiet_NaN();
-                field_data.v2[i]    = std::numeric_limits<core::grid_data_t::value_t>::quiet_NaN();
-                field_data.s2n2[i]  = grid_data_t(0);
-                field_data.peak2[i] = grid_data_t(0);
+                field_data.s2n[i]   = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
+                field_data.p2p[i]   = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
+                field_data.peak[i]  = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
+                field_data.peak_ind[i] = 0;
                 field_data.flag[i]  = static_cast<uint8_t>(FLAG::INVALID);
 
                 return;
             }
-            }
 
             // Get subpixel information and add it to vector field data
-            openpiv::core::point2<openpiv::core::grid_coords_t> subpixel_interp[num_peaks] = {};
+            core::point2<core::grid_coords_t> subpixel_interp[num_peaks] = {};
 
             for (uint32_t peak_ind=0; peak_ind<peaks.size(); peak_ind++)
             {
@@ -256,11 +251,10 @@ namespace openpiv::piv
             }
 
             // u and v signs are swapped to match openpiv
-            field_data.u[i] = -(midpoint[0] - (bl[0] + subpixel_interp[0][0]));
-            field_data.v[i] = -(midpoint[1] - (bl[1] + subpixel_interp[0][1]));
-            field_data.s2n[i]  = peaks[0][{1, 1}] / corr_mean;
-            field_data.p2p[i]  = (peaks.size() > min_peak_count) ? peaks[0][{1, 1}] / peaks[1][{1, 1}] : 1.0;
-            field_data.peak[i] = peaks[0][{1, 1}];
+            field_data.u1[i] = -(midpoint[0] - (bl[0] + subpixel_interp[0][0]));
+            field_data.v1[i] = -(midpoint[1] - (bl[1] + subpixel_interp[0][1]));
+            field_data.s2n1[i]  = peaks[0][{1, 1}] / corr_mean;
+            field_data.peak1[i] = peaks[0][{1, 1}];
 
             // Now populate secondary peak info
             if (peaks.size() > 1)
@@ -270,6 +264,24 @@ namespace openpiv::piv
                 field_data.s2n2[i]  = peaks[1][{1, 1}] / corr_mean;
                 field_data.peak2[i] = peaks[1][{1, 1}];
             }
+
+            // Now populate tertiary peak info
+            if (peaks.size() > 2)
+            {
+                field_data.u3[i] = -(midpoint[0] - (bl[0] + subpixel_interp[2][0]));
+                field_data.v3[i] = -(midpoint[1] - (bl[1] + subpixel_interp[2][1]));
+                field_data.s2n3[i]  = peaks[2][{1, 1}] / corr_mean;
+                field_data.peak3[i] = peaks[2][{1, 1}];
+            }
+
+            // Initialize the working fields from the primary peak
+            field_data.u[i]    = field_data.u1[i];
+            field_data.v[i]    = field_data.v1[i];
+            field_data.s2n[i]  = field_data.s2n1[i];
+            field_data.peak[i] = field_data.peak1[i];
+            field_data.p2p[i]  = (peaks.size() > min_peak_count) ? peaks[0][{1, 1}] / peaks[1][{1, 1}] : 1.0;
+            field_data.peak_ind[i] = 0;
+            field_data.flag[i] = static_cast<uint8_t>(FLAG::VALID);
         };
 
         if (thread_count > 1)
