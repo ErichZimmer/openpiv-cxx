@@ -107,7 +107,7 @@ namespace openpiv::algos {
             data.real_buffer.reset( fftwf_alloc_real(N) );
 
             if ( !data.fft_buffer_a || !data.fft_buffer_b || !data.real_buffer )
-                exception_builder< std::bad_alloc >()
+                exception_builder< std::runtime_error >()
                     << "FFTW buffers failed to allocate";
 
             auto& [fft, result] = storage().emplace_back(self, std::move(data));
@@ -173,7 +173,7 @@ namespace openpiv::algos {
             complex_buffer_t fft_buffer_a{ fftwf_alloc_complex(N), &fftwf_free };
 
             if ( !real_buffer || !fft_buffer_a )
-                exception_builder< std::bad_alloc >()
+                exception_builder< std::runtime_error >()
                     << "FFTW buffers failed to allocate";
 
             const int width = static_cast<int>( size_.width() );
