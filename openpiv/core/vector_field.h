@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 
 // local
 #include "core/image.h"
@@ -27,17 +28,39 @@ namespace openpiv::core {
         core::image<ContainedT> s2n;
         core::image<ContainedT> p2p;
         core::image<ContainedT> peak;
+        core::image<ContainedT> u1;
+        core::image<ContainedT> v1;
+        core::image<ContainedT> s2n1;
+        core::image<ContainedT> peak1;
         core::image<ContainedT> u2;
         core::image<ContainedT> v2;
         core::image<ContainedT> s2n2;
         core::image<ContainedT> peak2;
+        core::image<ContainedT> u3;
+        core::image<ContainedT> v3;
+        core::image<ContainedT> s2n3;
+        core::image<ContainedT> peak3;
+        core::image<core::g_8> peak_ind;
         core::image<core::g_8> flag;
 
         vector_point_data(uint32_t w, uint32_t h)
-        : u(w, h), v(w, h), s2n(w, h), p2p(w, h), peak{w, h}, u2(w, h), v2(w, h), s2n2(w, h),  peak2{w, h}, flag{w, h}{}
+        : vector_point_data(core::size{w, h}) {}
 
         vector_point_data(core::size s)
-        : u(s), v(s), s2n(s), p2p(s), peak(s), u2(s), v2(s), s2n2(s), peak2(s), flag(s) {}
+        : u(s), v(s), s2n(s), p2p(s), peak(s)
+        , u1(s, std::numeric_limits<typename ContainedT::value_t>::quiet_NaN())
+        , v1(s, std::numeric_limits<typename ContainedT::value_t>::quiet_NaN())
+        , s2n1(s, std::numeric_limits<typename ContainedT::value_t>::quiet_NaN())
+        , peak1(s, std::numeric_limits<typename ContainedT::value_t>::quiet_NaN())
+        , u2(s, std::numeric_limits<typename ContainedT::value_t>::quiet_NaN())
+        , v2(s, std::numeric_limits<typename ContainedT::value_t>::quiet_NaN())
+        , s2n2(s, std::numeric_limits<typename ContainedT::value_t>::quiet_NaN())
+        , peak2(s, std::numeric_limits<typename ContainedT::value_t>::quiet_NaN())
+        , u3(s, std::numeric_limits<typename ContainedT::value_t>::quiet_NaN())
+        , v3(s, std::numeric_limits<typename ContainedT::value_t>::quiet_NaN())
+        , s2n3(s, std::numeric_limits<typename ContainedT::value_t>::quiet_NaN())
+        , peak3(s, std::numeric_limits<typename ContainedT::value_t>::quiet_NaN())
+        , peak_ind(s), flag(s) {}
     };
 
     template < typename ContainedT>

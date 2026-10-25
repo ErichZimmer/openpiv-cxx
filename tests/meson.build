@@ -16,6 +16,7 @@ test_source_files = [
   'size_test.cpp',
   'stream_utils_test.cpp',
   'util_test.cpp',
+  'vector_field_test.cpp',
   'vector_test.cpp'
 ]
 
