@@ -16,12 +16,12 @@ namespace openpiv::interp
         for (int32_t i = 0; i < n; ++i)
         {
             double xi = i - (k - 0.5);
-
             double wi = 1.0;
 
             for (int32_t j = 0; j < n; ++j)
             {
-                if (j == i) continue;
+                if (j == i)
+                    continue;
 
                 double xj = j - (k - 0.5);
 

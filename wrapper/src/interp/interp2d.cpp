@@ -22,13 +22,15 @@ void add_interp2d(py::module& m)
             const core::image<core::grid_data_t>& data,
             const core::grid_coords& mappings,
             uint32_t k,
-            int32_t threads)
-        {
+            bool separatable,
+            int32_t threads
+        ) {
             auto out = interp::interp2d<core::image, core::grid_data_t>(
                 field_coords,
                 data,
                 mappings,
                 k,
+                separatable,
                 threads
             );
 
@@ -39,6 +41,7 @@ void add_interp2d(py::module& m)
         py::arg("data"),
         py::arg("mappings"),
         py::arg("k"),
+        py::arg("separatable"),
         py::arg("threads")
     );
 }

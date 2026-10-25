@@ -39,7 +39,39 @@ namespace openpiv::interp {
         core::image<ContainedT>& out,
         int32_t k,
         int32_t threads
-    );   
+    );
+
+    /**
+     * @brief Map new coordinates of an image using optimized Lagrange interpolation.
+     * 
+     * @param image The input image to interpolate.
+     * @param mappings The grid coordinates at which the image is evaluated.
+     * @param k The half-size (radius) of the kernel (e.g., k=3 --> 6x6 kernel).
+     * @param threads The amount of threads to use during interpolation
+     * @return output The interpolated image.
+     *
+     * @note IMPORTANT: This function is mainly for upscaling. Deformation fields are not compatible.
+     * @note A kernel half-size of 1 is equivalen to the shifted linear interpolation scheme.
+     * @note Image borders are handled using a mirror scheme (dcb|abcd|cba)
+     * @note The interpolation function evaluates everything using g_f64 (doubles) under-the-hood. This may or may not require type conversions depending on the image pixel types.
+     */
+    template <
+        template<typename> class ImageT,
+        typename ContainedT,
+        typename ValueT = typename ContainedT::value_t,
+        typename = std::enable_if_t<
+            is_imagetype_v<ImageT<ContainedT>> &&
+            is_real_mono_pixeltype_v<ContainedT> &&
+            std::is_floating_point<ValueT>::value
+        >
+    >
+    void lagrange_interp2n(
+        const core::image<ContainedT>& src,
+        const core::grid_coords& mappings,
+        core::image<ContainedT>& out,
+        int32_t k,
+        int32_t threads
+    );
 
 } // end of namespace
 

@@ -40,6 +40,17 @@ foreach test_file: test_source_files
   
 endforeach
 
+fftw_test = executable(
+  'fftw_test',
+  'fftw_test.cpp',
+  include_directories: openpiv_include,
+  dependencies: openpiv_deps,
+  cpp_args: ['-D_USE_MATH_DEFINES'],
+  link_with: openpiv_lib,
+)
+
+test('fftw_test', fftw_test, timeout: 120)
+
 if found_benchmark
   benchmark_source_files = [
     'image_algos_benchmark.cpp',

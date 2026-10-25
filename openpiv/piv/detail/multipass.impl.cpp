@@ -94,6 +94,7 @@ namespace openpiv::piv
             field_grid,
             field_data.u,
             1, // Shifted linear interpoaltion
+            true, // Seperatable kernels for upscaling; reduces computational complexity
             1 // Only use a single thread
         );
 
@@ -103,6 +104,7 @@ namespace openpiv::piv
             field_grid,
             field_data.v,
             1, // Shifted linear interpoaltion
+            true, // Seperatable kernels for upscaling; reduces computational complexity
             1 // Only use a single thread
         );
 

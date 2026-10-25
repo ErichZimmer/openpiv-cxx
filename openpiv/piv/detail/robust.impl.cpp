@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include "algos/duccfft.h"
+#include "algos/fftw.h"
 #include "algos/pocket_fft.h"
 #include "algos/stats.h"
 
@@ -124,9 +124,9 @@ namespace openpiv::piv
                 ContainerT
             >;
 
-        auto duccfft_algo = algos::DuccFFT<FloatT>(corr_window_size);
-        auto duccfft_correlator =
-            &algos::DuccFFT<FloatT>::cross_correlate_real<
+        auto fftw_algo = algos::FFTW<FloatT>(corr_window_size, false);
+        auto fftw_correlator =
+            &algos::FFTW<FloatT>::cross_correlate_real<
                 core::image,
                 ContainerT
             >;
@@ -152,8 +152,8 @@ namespace openpiv::piv
             &corr_window_size,
             &pocketfft_algo,
             &pocketfft_correlator,
-            &duccfft_algo,
-            &duccfft_correlator,
+            &fftw_algo,
+            &fftw_correlator,
             simd,
             zero_pad,
             limit_search,
@@ -174,7 +174,7 @@ namespace openpiv::piv
             );
 
             ImageT output = simd
-                ? (duccfft_algo.*duccfft_correlator)(iw_a, iw_b)
+                ? (fftw_algo.*fftw_correlator)(iw_a, iw_b)
                 : (pocketfft_algo.*pocketfft_correlator)(iw_a, iw_b);
 
             detail::normalize_nsqecc<core::image, ContainerT>(
@@ -244,15 +244,15 @@ namespace openpiv::piv
             // Get subpixel information and add it to vector field data
             openpiv::core::point2<openpiv::core::grid_coords_t> subpixel_interp[num_peaks] = {};
 
-            for (uint32_t peak_ind=0; peak_ind<num_peaks; peak_ind++)
+            for (uint32_t peak_ind=0; peak_ind<peaks.size(); peak_ind++)
             {
-                auto peak = peaks[i];
+                auto peak = peaks[peak_ind];
                 core::point2<core::grid_coords_t> peak_location{};
 
                 // Since robust correlation is always (0..1], there is no need to check if the plane is log safe
                 peak_location = core::fit_simple_gaussian( peak );
 
-                subpixel_interp[i] = peak_location;
+                subpixel_interp[peak_ind] = peak_location;
             }
 
             // u and v signs are swapped to match openpiv

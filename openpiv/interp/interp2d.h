@@ -34,6 +34,7 @@ namespace openpiv::interp
         const core::grid_coords& mappings,
         core::image<ContainedT>& out,
         uint32_t k,
+        bool separated,
         int32_t threads
     ) {
         // EPS accounts for floating point error
@@ -113,13 +114,22 @@ namespace openpiv::interp
         }
 
         // Now interpolate!
-        interp::lagrange_interp2d<core::image, ContainedT>(
-            grid_data,
-            mappings_px,
-            out,
-            k,
-            threads
-        );
+        if (separated)
+            interp::lagrange_interp2n<core::image, ContainedT>(
+                grid_data,
+                mappings_px,
+                out,
+                k,
+                threads
+            );
+        else
+            interp::lagrange_interp2d<core::image, ContainedT>(
+                grid_data,
+                mappings_px,
+                out,
+                k,
+                threads
+            );
     }
 
 
@@ -139,6 +149,7 @@ namespace openpiv::interp
         const core::image<ContainedT>& grid_data,
         const core::grid_coords& mappings,
         uint32_t k,
+        bool separated,
         int32_t threads
     ) {
         ResultT out{ grid_data.size() };
@@ -149,6 +160,7 @@ namespace openpiv::interp
             mappings,
             out,
             k,
+            separated,
             threads
         );
 
