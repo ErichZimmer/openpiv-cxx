@@ -2,6 +2,7 @@ python_sources = [
     'openpiv_cxx/__init__.py',
     'openpiv_cxx/parsing.py',
     'openpiv_cxx/process.py',
+    'openpiv_cxx/postprocess.py',
     'openpiv_cxx/validation.py'
 ]
 

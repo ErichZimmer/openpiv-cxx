@@ -68,6 +68,13 @@ void add_grid_coords(py::module& m)
 
 void add_grid_data(py::module& m)
 {
+    py::enum_<core::FLAG>(m, "FLAG")
+        .value("VALID", core::FLAG::VALID)
+        .value("INVALID", core::FLAG::INVALID)
+        .value("SUBSTITUTED", core::FLAG::SUBSTITUTED)
+        .value("INTERPOLATED", core::FLAG::INTERPOLATED)
+        .value("MASKED", core::FLAG::MASKED);
+
     py::class_<grid_data>(m, "grid_data")
         .def(py::init<const grid_data&>())
         .def(py::init<uint32_t, uint32_t>())
