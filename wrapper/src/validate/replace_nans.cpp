@@ -19,7 +19,7 @@ void add_validate_replacement(py::module& m)
 {
 
      m.def("substitute_nans",
-          [](core::grid_data field_data)
+          [](core::grid_data& field_data)
         {
             uint32_t failed_substitutions = validate::substitute_nans<core::grid_data_t>(
                 field_data
