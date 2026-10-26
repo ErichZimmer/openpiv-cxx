@@ -32,7 +32,7 @@ void add_validate_replacement(py::module& m)
     );
 
     m.def("impute_nans",
-          [](core::grid_data field_data,
+          [](core::grid_data& field_data,
              bool include_corners,
              double tolerance,
              uint32_t max_iterations

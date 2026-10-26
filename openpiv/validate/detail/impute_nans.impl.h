@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 
 #include "core/exception_builder.h"
@@ -32,10 +33,12 @@ namespace openpiv::validate
         uint32_t max_iterations
     ) {
         if ( field_data.u.size() != field_data.v.size() ||
+             field_data.u.size() != field_data.s2n.size() ||
+             field_data.u.size() != field_data.peak.size() ||
              field_data.u.size() != field_data.flag.size() )
         {
             core::exception_builder<std::invalid_argument>()
-                << "u, v, and flag must have the same size";
+                << "u, v, s2n, peak, and flag must have the same size";
         }
 
         if ( !std::isfinite(tolerance) || tolerance < 0.0 )
@@ -60,6 +63,7 @@ namespace openpiv::validate
         const core::flag_t invalid_flag = static_cast<core::flag_t>(core::FLAG::INVALID);
         const core::flag_t masked_flag = static_cast<core::flag_t>(core::FLAG::MASKED);
         const core::flag_t interpolated_flag = static_cast<core::flag_t>(core::FLAG::INTERPOLATED);
+        const ValueT nan = std::numeric_limits<ValueT>::quiet_NaN();
 
         core::image<core::g<core::flag_t>> invalid{ field_data.u.size() };
         uint32_t invalid_count = 0;
@@ -211,7 +215,11 @@ namespace openpiv::validate
             for ( uint32_t i = 0; i < invalid.pixel_count(); ++i )
             {
                 if ( static_cast<core::flag_t>(invalid[i]) != 0 )
+                {
+                    field_data.s2n[i] = nan;
+                    field_data.peak[i] = nan;
                     field_data.flag[i] = interpolated_flag;
+                }
             }
  //       }
 
