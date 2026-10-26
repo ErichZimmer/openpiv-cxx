@@ -21,14 +21,14 @@ namespace openpiv::validate
     uint32_t substitute_nans(
         core::vector_point_data<ContainedT>& field_data
     ) {
-        const uint8_t invalid_flag = static_cast<uint8_t>(core::FLAG::INVALID);
-        const uint8_t masked_flag = static_cast<uint8_t>(core::FLAG::MASKED);
-        const uint8_t substituted_flag = static_cast<uint8_t>(core::FLAG::SUBSTITUTED);
+        const core::flag_t invalid_flag = static_cast<core::flag_t>(core::FLAG::INVALID);
+        const core::flag_t masked_flag = static_cast<core::flag_t>(core::FLAG::MASKED);
+        const core::flag_t substituted_flag = static_cast<core::flag_t>(core::FLAG::SUBSTITUTED);
         uint32_t unsucessfull_substitutions = 0;
         
         for ( uint32_t i = 0; i < field_data.u.pixel_count(); ++i )
         {
-            const uint8_t flag = static_cast<uint8_t>(field_data.flag[i]);
+            const core::flag_t flag = static_cast<core::flag_t>(field_data.flag[i]);
 
             if ( flag == masked_flag )
                 continue;

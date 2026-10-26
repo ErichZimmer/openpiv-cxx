@@ -18,17 +18,15 @@ void add_validate_median(py::module& m)
 {
 
      m.def("validate_median",
-          [](const core::grid_data field_data,
+          [](core::grid_data& field_data,
              float threshold_u,
              float threshold_v)
           {
-              auto flag = validate::validate_median<core::grid_data_t>(
+              validate::validate_median<core::grid_data_t>(
                 field_data,
                 threshold_u,
                 threshold_v
               );
-
-            return flag;
         },
 
         py::arg("field_data"),

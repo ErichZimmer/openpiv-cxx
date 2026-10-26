@@ -231,7 +231,7 @@ namespace openpiv::piv
                 field_data.p2p[i]   = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
                 field_data.peak[i]  = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
                 field_data.peak_ind[i] = 0;
-                field_data.flag[i]  = static_cast<uint8_t>(FLAG::INVALID);
+                field_data.flag[i]  = static_cast<core::flag_t>(FLAG::INVALID);
 
                 return;
             }
@@ -281,7 +281,7 @@ namespace openpiv::piv
             field_data.peak[i] = field_data.peak1[i];
             field_data.p2p[i]  = (peaks.size() > min_peak_count) ? peaks[0][{1, 1}] / peaks[1][{1, 1}] : 1.0;
             field_data.peak_ind[i] = 0;
-            field_data.flag[i] = static_cast<uint8_t>(FLAG::VALID);
+            field_data.flag[i] = static_cast<core::flag_t>(FLAG::VALID);
         };
 
         if (thread_count > 1)

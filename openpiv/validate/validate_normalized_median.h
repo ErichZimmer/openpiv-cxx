@@ -14,14 +14,13 @@ namespace openpiv::validate
     template <
         typename ContainedT,
         typename ValueT = typename ContainedT::value_t,
-        typename ResultT = core::image<core::g_8>,
         typename = typename std::enable_if_t<
             is_real_mono_pixeltype_v<ContainedT> &&
             std::is_floating_point_v<ValueT>
         >
     >
-    ResultT validate_normalized_median(
-        const core::vector_point_data<ContainedT>& field_data,
+    void validate_normalized_median(
+        core::vector_point_data<ContainedT>& field_data,
         ValueT threshold
     );
 

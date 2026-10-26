@@ -57,11 +57,11 @@ namespace openpiv::validate
                 << "max_iterations must be less than 500";
         }
 
-        const uint8_t invalid_flag = static_cast<uint8_t>(core::FLAG::INVALID);
-        const uint8_t masked_flag = static_cast<uint8_t>(core::FLAG::MASKED);
-        const uint8_t interpolated_flag = static_cast<uint8_t>(core::FLAG::INTERPOLATED);
+        const core::flag_t invalid_flag = static_cast<core::flag_t>(core::FLAG::INVALID);
+        const core::flag_t masked_flag = static_cast<core::flag_t>(core::FLAG::MASKED);
+        const core::flag_t interpolated_flag = static_cast<core::flag_t>(core::FLAG::INTERPOLATED);
 
-        core::image<core::g_8> invalid{ field_data.u.size() };
+        core::image<core::g<core::flag_t>> invalid{ field_data.u.size() };
         uint32_t invalid_count = 0;
         uint32_t valid_count = 0;
         ContainedT fill_value = ContainedT{0};
@@ -69,11 +69,11 @@ namespace openpiv::validate
         // Find invalid vectors
         for ( uint32_t i = 0; i < field_data.u.pixel_count(); ++i )
         {
-            const uint8_t flag = static_cast<uint8_t>(field_data.flag[i]);
+            const core::flag_t flag = static_cast<core::flag_t>(field_data.flag[i]);
 
             if ( flag == invalid_flag )
             {
-                invalid[i] = core::g_8{1};
+                invalid[i] = invalid_flag;
                 ++invalid_count;
 
                 continue;
@@ -103,7 +103,7 @@ namespace openpiv::validate
         // Set invalid values to an initial guess
         for ( uint32_t i = 0; i < invalid.pixel_count(); ++i )
         {
-            if ( static_cast<uint8_t>(invalid[i]) == 0 )
+            if ( static_cast<core::flag_t>(invalid[i]) == 0 )
                 continue;
 
             field_data.u[i] = fill_value;
@@ -124,7 +124,7 @@ namespace openpiv::validate
             {
                 for ( int32_t x = 0; x < width; ++x )
                 {
-                    if ( static_cast<uint8_t>(invalid[{x,y}]) == 0 )
+                    if ( static_cast<core::flag_t>(invalid[{x,y}]) == 0 )
                         continue;
 
                     ValueT sum_u = 0.0;
@@ -153,7 +153,7 @@ namespace openpiv::validate
                             if ( neighbor_x < 0 || neighbor_x >= width )
                                 continue;
 
-                            if ( static_cast<uint8_t>(field_data.flag[{neighbor_x, neighbor_y}]) == masked_flag )
+                            if ( static_cast<core::flag_t>(field_data.flag[{neighbor_x, neighbor_y}]) == masked_flag )
                             {
                                 continue;
                             }
@@ -210,7 +210,7 @@ namespace openpiv::validate
 //        {
             for ( uint32_t i = 0; i < invalid.pixel_count(); ++i )
             {
-                if ( static_cast<uint8_t>(invalid[i]) != 0 )
+                if ( static_cast<core::flag_t>(invalid[i]) != 0 )
                     field_data.flag[i] = interpolated_flag;
             }
  //       }

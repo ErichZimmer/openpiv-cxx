@@ -11,7 +11,9 @@
 
 namespace openpiv::core {
 
-    enum class FLAG : uint8_t
+    using flag_t = uint8_t;
+
+    enum class FLAG : flag_t
     {
         VALID = 0,
         INVALID,
@@ -41,7 +43,7 @@ namespace openpiv::core {
         core::image<ContainedT> s2n3;
         core::image<ContainedT> peak3;
         core::image<core::g_8> peak_ind;
-        core::image<core::g_8> flag;
+        core::image<core::g<flag_t>> flag;
 
         vector_point_data(uint32_t w, uint32_t h)
         : vector_point_data(core::size{w, h}) {}

@@ -20,17 +20,15 @@ void add_validate_range(py::module& m)
 {
 
      m.def("validate_range",
-          [](const core::grid_data field_data,
+          [](core::grid_data& field_data,
              std::array<float, 2> threshold_u,
              std::array<float, 2> threshold_v)
           {
-              auto flag = validate::validate_range<core::grid_data_t>(
+              validate::validate_range<core::grid_data_t>(
                 field_data,
                 threshold_u,
                 threshold_v
               );
-
-            return flag;
         },
 
         py::arg("field_data"),
