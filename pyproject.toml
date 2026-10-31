@@ -57,18 +57,19 @@ setup = [
 install = ['--skip-subprojects=fmt']
 
 [tool.meson-python.wheel]
+[tool.meson-python.wheel]
 exclude = [
-  "{libdir_shared}/libduccfft.dll*",
+  "{libdir_shared}/*fftw3f*.dll*",
   "{libdir_shared}/libopenpivcore.dll*",
-  "{libdir_shared}/libduccfft*.dylib*",
+  "{libdir_shared}/libfftw3f*.dylib*",
   "{libdir_shared}/libopenpivcore*.dylib*",
-  "{libdir_static}/libduccfft.dll*",
+  "{libdir_static}/*fftw3f*.dll*",
   "{libdir_static}/libopenpivcore.dll*",
 ]
 
 [tool.cibuildwheel]
 skip = ["*_i686", "*_ppc64le", "*_s390x", "*_universal2"]
-test-command = "python -c \"from openpiv_cxx import pyopenpivcore as cpiv; b = cpiv.DUCCFFT_SIMD_BACKEND(); print('DUCC FFT backend:', b); assert b\""
+test-command = "python -c \"from openpiv_cxx import pyopenpivcore as cpiv \""
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux_2_28"
@@ -78,13 +79,13 @@ musllinux-aarch64-image = "musllinux_1_2"
 
 [tool.cibuildwheel.windows]
 before-build = "pip install delvewheel"
-repair-wheel-command = "delvewheel repair --analyze-existing-exes --add-path \"{project}/build-wheel/ducc_fft_disbatch;{project}/build-wheel/openpiv\" --strip -v -w {dest_dir} {wheel}"
+repair-wheel-command = "delvewheel repair --analyze-existing-exes --add-path \"{project}/build-wheel/external/subprojects/fftw-3.3.11;{project}/build-wheel/openpiv\" --strip -v -w {dest_dir} {wheel}"
 
 [tool.cibuildwheel.windows.config-settings]
 build-dir = "build-wheel"
 
 [tool.cibuildwheel.macos]
-repair-wheel-command = "DYLD_LIBRARY_PATH=\"{project}/build-wheel/ducc_fft_disbatch:{project}/build-wheel/openpiv\" delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
+repair-wheel-command = "DYLD_LIBRARY_PATH=\"{project}/build-wheel/external/subprojects/fftw-3.3.11:{project}/build-wheel/openpiv\" delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
 
 [tool.cibuildwheel.macos.config-settings]
 build-dir = "build-wheel"
