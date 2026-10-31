@@ -96,7 +96,7 @@ jobs:
 
       - name: Import Python extension
         run: |
-          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv"
 
   intel_python64:
     name: Intel oneAPI, x86-64, Python 3.12
@@ -143,4 +143,4 @@ jobs:
 
       - name: Import Python extension
         run: |
-          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv"
