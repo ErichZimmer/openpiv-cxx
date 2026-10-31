@@ -1,0 +1,350 @@
+name: Build and publish releases
+
+on:
+  push:
+    tags:
+      - "v*"
+
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing version tag to build and publish, e.g. v0.4.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout release
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          submodules: true
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.12"
+
+      - name: Check release version
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          metadata = tomllib.loads(
+              Path("pyproject.toml").read_text(encoding="utf-8")
+          )
+
+          version = metadata["project"]["version"]
+          tag = os.environ["RELEASE_TAG"]
+
+          if tag != f"v{version}":
+              raise SystemExit(
+                  f"Release tag {tag!r} does not match "
+                  f"pyproject.toml version {version!r}."
+              )
+          PY
+
+      - name: Install build frontend
+        run: python -m pip install build
+
+      - name: Build source distribution
+        run: python -m build --sdist --outdir dist
+
+      - name: Upload source distribution artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist-sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  build_wheels:
+    name: Build ${{ matrix.python }}-${{ matrix.buildplat[1] }}
+    needs: build_sdist
+    runs-on: ${{ matrix.buildplat[0] }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - cp310
+          - cp311
+          - cp312
+          - cp313
+          - cp314
+          - cp315
+
+        buildplat:
+          - [ubuntu-22.04, manylinux_x86_64]
+          - [ubuntu-22.04, musllinux_x86_64]
+          - [ubuntu-22.04-arm, manylinux_aarch64]
+          - [ubuntu-22.04-arm, musllinux_aarch64]
+          - [macos-15-intel, macosx_x86_64]
+          - [macos-15, macosx_arm64]
+          - [windows-2022, win_amd64]
+          - [windows-11-arm, win_arm64]
+
+    steps:
+      - name: Checkout release
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          submodules: true
+
+      - name: Deduplicate meson-python macOS RPATHs
+        if: ${{ runner.os == 'macOS' }}
+        shell: bash
+        run: |
+          tool_dir="$RUNNER_TEMP/openpiv-tools"
+          mkdir -p "$tool_dir"
+
+          cat > "$tool_dir/install_name_tool" <<'SH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          real_tool=/usr/bin/install_name_tool
+
+          if [[ $# -eq 4 && $1 == "-rpath" ]]; then
+            old_rpath=$2
+            new_rpath=$3
+            binary=$4
+            load_commands=$(/usr/bin/otool -l "$binary")
+
+            if /usr/bin/grep -Fq -- \
+              "path $new_rpath (offset" <<< "$load_commands"; then
+              exec "$real_tool" \
+                -delete_rpath "$old_rpath" "$binary"
+            fi
+          fi
+
+          exec "$real_tool" "$@"
+          SH
+
+          chmod +x "$tool_dir/install_name_tool"
+          echo "$tool_dir" >> "$GITHUB_PATH"
+
+      - name: Build wheel - Windows ARM64 (clang-cl)
+        if: ${{ runner.os == 'Windows' && matrix.buildplat[1] == 'win_arm64' }}
+        uses: pypa/cibuildwheel@f9b966cfadf4109556cadc5bb39ddb72d0ce664e # v4.3.5
+        env:
+          CC: clang-cl
+          CXX: clang-cl
+          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
+          CIBW_CONFIG_SETTINGS_WINDOWS: "build-dir=build-wheel setup-args=--vsenv"
+
+      - name: Build wheel
+        if: ${{ !(runner.os == 'Windows' && matrix.buildplat[1] == 'win_arm64') }}
+        uses: pypa/cibuildwheel@f9b966cfadf4109556cadc5bb39ddb72d0ce664e # v4.3.5
+        env:
+          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist-${{ matrix.python }}-${{ matrix.buildplat[1] }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
+  publish_release:
+    name: Publish release assets
+    needs:
+      - build_sdist
+      - build_wheels
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: dist-*
+          merge-multiple: true
+          path: dist
+
+      - name: Check distribution versions
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          version = os.environ["RELEASE_TAG"][1:]
+          wheels = sorted(Path("dist").glob("*.whl"))
+          sdists = sorted(Path("dist").glob("*.tar.gz"))
+
+          if not wheels:
+              raise SystemExit("No wheels were downloaded.")
+
+          if len(sdists) != 1:
+              raise SystemExit(
+                  "Expected exactly one source distribution."
+              )
+
+          for wheel in wheels:
+              if wheel.name.split("-")[1] != version:
+                  raise SystemExit(
+                      f"{wheel.name} does not match release version {version}."
+                  )
+
+          sdist = sdists[0]
+          sdist_version = sdist.name.removesuffix(".tar.gz").rsplit("-", 1)[1]
+
+          if sdist_version != version:
+              raise SystemExit(
+                  f"{sdist.name} does not match release version {version}."
+              )
+          PY
+
+      - name: Create or update GitHub release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          overwrite_files: false
+
+  publish_pages:
+    name: Publish download page
+    needs: publish_release
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      - name: Generate download index
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGES_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          gh api --paginate --slurp \
+            "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            > releases.json
+
+          python3 - <<'PY'
+          import json
+          import os
+          from html import escape
+          from pathlib import Path
+
+          release_pages = json.loads(
+              Path("releases.json").read_text(encoding="utf-8")
+          )
+
+          sections = []
+
+          for releases in release_pages:
+              for release in releases:
+                  if release["draft"]:
+                      continue
+
+                  distributions = sorted(
+                      (
+                          asset
+                          for asset in release["assets"]
+                          if asset["name"].lower().startswith(
+                              ("openpiv_cxx-", "openpiv-cxx-")
+                          )
+                          and asset["name"].endswith(
+                              (".whl", ".tar.gz")
+                          )
+                      ),
+                      key=lambda asset: asset["name"],
+                  )
+
+                  if not distributions:
+                      continue
+
+                  sections.append(
+                      f"<h2>{escape(release['tag_name'])}</h2>\n<ul>"
+                  )
+
+                  for asset in distributions:
+                      url = escape(
+                          asset["browser_download_url"], quote=True
+                      )
+                      name = escape(asset["name"])
+                      sections.append(
+                          f'<li><a href="{url}">{name}</a></li>'
+                      )
+
+                  sections.append("</ul>")
+
+          if not sections:
+              raise SystemExit(
+                  "No published OpenPIV-cxx distributions were found."
+              )
+
+          base_url = os.environ["PAGES_URL"].rstrip("/")
+          command = (
+              "python -m pip install --find-links "
+              f"{base_url}/wheels/ openpiv_cxx"
+          )
+
+          document = (
+              "<!doctype html>\n"
+              '<html lang="en">\n'
+              '<head><meta charset="utf-8">\n'
+              "<title>OpenPIV-cxx downloads</title></head>\n"
+              "<body><h1>OpenPIV-cxx downloads</h1>\n"
+              f"<pre>{escape(command)}</pre>\n"
+              + "\n".join(sections)
+              + "\n</body></html>\n"
+          )
+
+          site = Path("_site")
+          downloads = site / "wheels"
+          downloads.mkdir(parents=True, exist_ok=True)
+
+          (downloads / "index.html").write_text(
+              document, encoding="utf-8"
+          )
+
+          # Provide a root page until documentation supplies one.
+          root_index = site / "index.html"
+          if not root_index.exists():
+              root_index.write_text(document, encoding="utf-8")
+
+          (site / ".nojekyll").touch()
+          PY
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: _site
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
