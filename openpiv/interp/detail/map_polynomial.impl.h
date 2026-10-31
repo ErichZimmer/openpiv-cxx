@@ -16,9 +16,6 @@
 #include "core/image_utils.h"
 #include "core/dll_export.h"
 
-#include "interp_common.impl.h"
-
-
 namespace openpiv::interp
 {
     using namespace openpiv::core;
@@ -66,28 +63,9 @@ namespace openpiv::interp
         
         const int32_t kernel_full_size = 2 * kernel_half_size;
 
-        // Precompute Lagrange weights
-        auto weighting_func = [kernel_half_size](double r) -> std::vector<double>
-        {
-            std::vector<double> w(2 * kernel_half_size);
-            poly_weights(r, kernel_half_size, w);
-            return w;
-        };
-
-        double r_min = -0.5;
-        double r_max = 0.5;
-        size_t steps = 512u;
-
-        const lut_v weights_table = make_lut(
-            weighting_func,
-            steps,
-            r_min,
-            r_max
-        );
-
         out.resize(mappings.size());
 
-        auto processor = [&src, &mappings, &out, &weights_table, src_width, src_height, kernel_half_size, kernel_full_size]( uint32_t ind, std::vector<double>& wx, std::vector<double>& wy )
+        auto processor = [&src, &mappings, &out, src_width, src_height, kernel_half_size, kernel_full_size]( uint32_t ind, std::vector<double>& wx, std::vector<double>& wy )
         {
             const uint32_t x = (ind % mappings.width());
             const uint32_t y = (ind / mappings.width());
@@ -103,8 +81,8 @@ namespace openpiv::interp
             double centered_offset_x = grid_coord_x - (cell_ix + 0.5);
             double centered_offset_y = grid_coord_y - (cell_iy + 0.5);
 
-            get_weights(centered_offset_x, weights_table, wx);
-            get_weights(centered_offset_y, weights_table, wy);
+            poly_weights(centered_offset_x, kernel_half_size, wx);
+            poly_weights(centered_offset_y, kernel_half_size, wy);
 
             const int32_t start_x = cell_ix - kernel_half_size + 1;
             const int32_t start_y = cell_iy - kernel_half_size + 1;
@@ -231,17 +209,6 @@ namespace openpiv::interp
         const int32_t src_width = static_cast<int32_t>(src.width());
         const int32_t src_height = static_cast<int32_t>(src.height());
 
-        // Same weight LUT as the existing N x N implementation.
-        const lut_v weights_table = make_lut(
-            [kernel_half_size](double r)
-            {
-                std::vector<double> w(2 * kernel_half_size);
-                poly_weights(r, kernel_half_size, w);
-                return w;
-            },
-            512, -0.5, 0.5
-        );
-
         core::image<core::g_f64> horizontal(mappings.width(), src.height());
 
          auto horizontal_processor = [&](
@@ -259,7 +226,7 @@ namespace openpiv::interp
                 const int32_t cell_x = static_cast<int32_t>(std::floor(coordinate));
                 const int32_t start_x = cell_x - kernel_half_size + 1;
 
-                get_weights(coordinate - (cell_x + 0.5), weights_table, wx);
+                poly_weights(coordinate - (cell_x + 0.5), kernel_half_size, wx);
 
                 double value = 0.0;
                 if (start_x >= 0 && start_x + kernel_full_size <= src_width)
@@ -290,7 +257,7 @@ namespace openpiv::interp
             const int32_t cell_y = static_cast<int32_t>(std::floor(coordinate));
             const int32_t start_y = cell_y - kernel_half_size + 1;
 
-            get_weights(coordinate - (cell_y + 0.5), weights_table, wy);
+            poly_weights(coordinate - (cell_y + 0.5), kernel_half_size, wy);
 
             auto* output = out.line(y);
 
