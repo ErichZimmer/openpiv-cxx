@@ -41,7 +41,7 @@ namespace openpiv::validate
                 << "u, v, s2n, peak, and flag must have the same size";
         }
 
-        if ( !std::isfinite(tolerance) || tolerance < 0.0 )
+        if ( !std::isfinite(static_cast<ValueT>(tolerance)) || tolerance < 0.0 )
         {
             core::exception_builder<std::invalid_argument>()
                 << "tolerance must be finite and non-negative";
