@@ -1,7 +1,7 @@
 project(
   'OpenPIV-c++',
   'cpp',
-  version: '0.3.0',
+  version: '0.4.0',
   license: 'GPL-3',
   meson_version: '>= 1.4.0',
   subproject_dir: 'external/subprojects',
