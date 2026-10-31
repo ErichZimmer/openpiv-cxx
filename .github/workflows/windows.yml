@@ -40,7 +40,7 @@ jobs:
           $wheel = Get-ChildItem 'tmp-msvc/*.whl' | Select-Object -First 1
           delvewheel repair "$($wheel.FullName)" `
             --add-path (Join-Path $PWD 'build-msvc/openpiv') `
-            --add-path (Join-Path $PWD 'build-msvc/ducc_fft_disbatch') `
+            --add-path (Join-Path $PWD 'build-msvc/external/subprojects/fftw-3.3.11') `
             -w wheels-msvc
 
           $repairedWheel = Get-ChildItem 'wheels-msvc/*.whl' | Select-Object -First 1
@@ -88,7 +88,7 @@ jobs:
           $wheel = Get-ChildItem 'tmp-clangcl/*.whl' | Select-Object -First 1
           delvewheel repair "$($wheel.FullName)" `
             --add-path (Join-Path $PWD 'build-clangcl/openpiv') `
-            --add-path (Join-Path $PWD 'build-clangcl/ducc_fft_disbatch') `
+            --add-path (Join-Path $PWD 'build-clangcl/external/subprojects/fftw-3.3.11') `
             -w wheels-clangcl
 
           $repairedWheel = Get-ChildItem 'wheels-clangcl/*.whl' | Select-Object -First 1
@@ -105,7 +105,7 @@ jobs:
       - name: Import Python extension
         shell: pwsh
         run: |
-          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv"
 
   mingw_python64:
     name: MinGW GCC, x86-64, Python 3.12
@@ -138,7 +138,7 @@ jobs:
           $wheel = Get-ChildItem 'tmp-mingw/*.whl' | Select-Object -First 1
           delvewheel repair "$($wheel.FullName)" `
             --add-path (Join-Path $PWD 'build-mingw/openpiv') `
-            --add-path (Join-Path $PWD 'build-mingw/ducc_fft_disbatch') `
+            --add-path (Join-Path $PWD 'build-mingw/external/subprojects/fftw-3.3.11') `
             -w wheels-mingw
 
           $repairedWheel = Get-ChildItem 'wheels-mingw/*.whl' | Select-Object -First 1
@@ -155,7 +155,7 @@ jobs:
       - name: Import Python extension
         shell: pwsh
         run: |
-          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv"
 
   intel_python64:
     name: Intel oneAPI, x86-64, Python 3.12
@@ -194,7 +194,7 @@ jobs:
           $wheel = Get-ChildItem 'tmp-intel/*.whl' | Select-Object -First 1
           delvewheel repair "$($wheel.FullName)" `
             --add-path (Join-Path $PWD 'build-intel/openpiv') `
-            --add-path (Join-Path $PWD 'build-intel/ducc_fft_disbatch') `
+            --add-path (Join-Path $PWD 'build-intel/external/subprojects/fftw-3.3.11') `
             -w wheels-intel
 
           $repairedWheel = Get-ChildItem 'wheels-intel/*.whl' | Select-Object -First 1
@@ -211,4 +211,4 @@ jobs:
       - name: Import Python extension
         shell: pwsh
         run: |
-          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv"
