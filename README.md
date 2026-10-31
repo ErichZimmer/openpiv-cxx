@@ -3,6 +3,7 @@
 [![CMake](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/build_test.yml/badge.svg)](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/build_test.yml)
 [![Windows compiler tests](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/windows.yml/badge.svg)](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/windows.yml)
 [![Linux compiler tests](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/linux.yml/badge.svg)](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/linux.yml)
+[![macOS compiler tests](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/macos.yml/badge.svg)](https://github.com/ErichZimmer/openpiv-cxx/actions/workflows/macos.yml)
 
 This project is the result of the collaborative effort of numerous researchers in order to provide one of the fastest PIV software on the market while remaining cross-platform and open-source. The software can do the following:
 
