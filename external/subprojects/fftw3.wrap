@@ -4,6 +4,7 @@ source_url = https://www.fftw.org/fftw-3.3.11.tar.gz
 source_filename = fftw-3.3.11.tar.gz
 source_hash = 5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1
 patch_directory = fftw3
+diff_files = fftw3-macos-arm64-timer.patch
 
 [provide]
 fftw3f = fftw_dep

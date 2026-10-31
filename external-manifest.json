@@ -19650,8 +19650,8 @@
       "size": 1136
     },
     "subprojects/fftw-3.3.11/kernel/cycle.h": {
-      "sha256": "894e6284e7540268bcde54a91b05e890d4ca1fd918376d578aae83c4f36306cf",
-      "size": 15918
+      "sha256": "c03e5ed09458872680f87889e5d0c485f7b1733a9bcd2283881361fdf3cf4ed2",
+      "size": 15949
     },
     "subprojects/fftw-3.3.11/kernel/debug.c": {
       "sha256": "98527cc7c8c01ccca12956ab68707fbbe84d9ee95450eb62e23b7b31a41d0db4",
@@ -20026,8 +20026,8 @@
       "size": 6151
     },
     "subprojects/fftw-3.3.11/meson.build": {
-      "sha256": "eadaaba738638482f333f936d2b90fc557699ca64abee37b24948d0b8c68c689",
-      "size": 7448
+      "sha256": "4a8c633318ba247138298ffb854d4557851eb539ae5191f85d83995a4eb4ec8a",
+      "size": 7437
     },
     "subprojects/fftw-3.3.11/meson_options.txt": {
       "sha256": "acebd049308f06b802789e03f0f81eb1a9e9a98bbb1bce90cdf1cc1c21f9986d",
@@ -23350,8 +23350,8 @@
       "size": 6901
     },
     "subprojects/fftw3.wrap": {
-      "sha256": "ed5aaf1855645bc59e3030d4999cd5201b493ca061dff3116ebcbea4109aa468",
-      "size": 258
+      "sha256": "dbaf688280d1cb9ab4d993dfc19f62b85c751c5add165cdaaf8078d227f0ba5b",
+      "size": 301
     },
     "subprojects/fmt-9.1.0/.clang-format": {
       "sha256": "2f571c8a846242630c03a81d97c0d892e22be0c0e954847cd184ae80028508ff",
@@ -26293,13 +26293,17 @@
       "sha256": "5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1",
       "size": 4310712
     },
+    "subprojects/packagefiles/fftw3-macos-arm64-timer.patch": {
+      "sha256": "368ec2a106d733162956fac2e282990d8fc10af8aaee850b79d83acfe5e09fee",
+      "size": 629
+    },
     "subprojects/packagefiles/fftw3/dft-codelets.txt": {
       "sha256": "e508cbf91ca5157a9a4b8f45cae65e46abd0dbadd468678cd3f8e22a9f1ceec0",
       "size": 1653
     },
     "subprojects/packagefiles/fftw3/meson.build": {
-      "sha256": "eadaaba738638482f333f936d2b90fc557699ca64abee37b24948d0b8c68c689",
-      "size": 7448
+      "sha256": "4a8c633318ba247138298ffb854d4557851eb539ae5191f85d83995a4eb4ec8a",
+      "size": 7437
     },
     "subprojects/packagefiles/fftw3/meson_options.txt": {
       "sha256": "acebd049308f06b802789e03f0f81eb1a9e9a98bbb1bce90cdf1cc1c21f9986d",

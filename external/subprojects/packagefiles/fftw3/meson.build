@@ -1,4 +1,4 @@
-# Native Meson build for the unmodified FFTW 3.3.11 release sources.
+# Native Meson build for the FFTW 3.3.11 release sources.
 # Only single precision is built. OpenPIV supplies the worker threads.
 project(
   'fftw3',
