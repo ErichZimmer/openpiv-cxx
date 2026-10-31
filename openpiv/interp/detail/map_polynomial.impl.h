@@ -84,8 +84,8 @@ namespace openpiv::interp
             poly_weights(centered_offset_x, kernel_half_size, wx);
             poly_weights(centered_offset_y, kernel_half_size, wy);
 
-            const int32_t start_x = cell_ix - kernel_half_size + 1;
-            const int32_t start_y = cell_iy - kernel_half_size + 1;
+            const int32_t start_x = static_cast<int32_t>(cell_ix) - kernel_half_size + 1;
+            const int32_t start_y = static_cast<int32_t>(cell_iy) - kernel_half_size + 1;
 
             const bool interior =
                 start_x >= 0 &&
@@ -101,15 +101,15 @@ namespace openpiv::interp
             {
                 for (int32_t j = 0; j < kernel_full_size; ++j)
                 {
-                    jj = cell_iy - kernel_half_size + 1 + j;
+                    jj = static_cast<size_t>(start_y + j);
 
                     const ContainedT* row = src.line(jj);
 
                     for (int32_t i = 0; i < kernel_full_size; ++i)
                     {
-                        ii = cell_ix - kernel_half_size + 1 + i;
+                        ii = static_cast<size_t>(start_x + i);
 
-                        value += static_cast<double>(row[ii]) * wx[i] * wy[j];
+                        value += static_cast<double>(row[ii]) * wx[static_cast<size_t>(i)] * wy[static_cast<size_t>(j)];
                     }
                 }
 
@@ -119,15 +119,15 @@ namespace openpiv::interp
             {
                 for (int32_t j = 0; j < kernel_full_size; ++j)
                 {
-                    jj = core::mirror_index<int32_t>(cell_iy - kernel_half_size + 1 + j, src_height);
+                    jj = static_cast<size_t>(core::mirror_index<int32_t>(start_y + j, static_cast<int32_t>(src_height)));
 
                     const ContainedT* row = src.line(jj);
 
                     for (int32_t i = 0; i < kernel_full_size; ++i)
                     {
-                        ii = core::mirror_index<int32_t>(cell_ix - kernel_half_size + 1 + i, src_width);
+                        ii = static_cast<size_t>(core::mirror_index<int32_t>(start_x + i, static_cast<int32_t>(src_width)));
 
-                        value += static_cast<double>(row[ii]) * wx[i] * wy[j];
+                        value += static_cast<double>(row[ii]) * wx[static_cast<size_t>(i)] * wy[static_cast<size_t>(j)];
                     }
                 }
 
@@ -217,8 +217,8 @@ namespace openpiv::interp
             uint32_t begin_x, 
             uint32_t end_x
         ) {
-            const auto* input = src.line(y);
-            auto* output = horizontal.line(y);
+            const auto* input = src.line(static_cast<size_t>(y));
+            auto* output = horizontal.line(static_cast<size_t>(y));
 
             for (uint32_t x = begin_x; x < end_x; ++x)
             {
@@ -226,20 +226,20 @@ namespace openpiv::interp
                 const int32_t cell_x = static_cast<int32_t>(std::floor(coordinate));
                 const int32_t start_x = cell_x - kernel_half_size + 1;
 
-                poly_weights(coordinate - (cell_x + 0.5), kernel_half_size, wx);
+                poly_weights(coordinate - (static_cast<double>(cell_x) + 0.5), kernel_half_size, wx);
 
                 double value = 0.0;
                 if (start_x >= 0 && start_x + kernel_full_size <= src_width)
                 {
                     for (int32_t i = 0; i < kernel_full_size; ++i)
-                        value += static_cast<double>(input[start_x + i]) * wx[i];
+                        value += static_cast<double>(input[static_cast<size_t>(start_x + i)]) * wx[static_cast<size_t>(i)];
                 }
                 else
                 {
                     for (int32_t i = 0; i < kernel_full_size; ++i)
                     {
                         const int32_t xx = core::mirror_index<int32_t>(start_x + i, src_width);
-                        value += static_cast<double>(input[xx]) * wx[i];
+                        value += static_cast<double>(input[static_cast<size_t>(xx)]) * wx[static_cast<size_t>(i)];
                     }
                 }
 
@@ -257,9 +257,9 @@ namespace openpiv::interp
             const int32_t cell_y = static_cast<int32_t>(std::floor(coordinate));
             const int32_t start_y = cell_y - kernel_half_size + 1;
 
-            poly_weights(coordinate - (cell_y + 0.5), kernel_half_size, wy);
+            poly_weights(coordinate - (static_cast<double>(cell_y) + 0.5), kernel_half_size, wy);
 
-            auto* output = out.line(y);
+            auto* output = out.line(static_cast<size_t>(y));
 
             if (start_y >= 0 && start_y + kernel_full_size <= src_height)
             {
@@ -267,7 +267,7 @@ namespace openpiv::interp
                 {
                     double value = 0.0;
                     for (int32_t j = 0; j < kernel_full_size; ++j)
-                        value += static_cast<double>(horizontal.line(start_y + j)[x]) * wy[j];
+                        value += static_cast<double>(horizontal.line(static_cast<size_t>(start_y + j))[x]) * wy[static_cast<size_t>(j)];
                     
                     output[x] = static_cast<ContainedT>(value);
                 }
@@ -280,7 +280,7 @@ namespace openpiv::interp
                     for (int32_t j = 0; j < kernel_full_size; ++j)
                     {
                         const int32_t yy = core::mirror_index<int32_t>(start_y + j, src_height);
-                        value += static_cast<double>(horizontal.line(yy)[x]) * wy[j];
+                        value += static_cast<double>(horizontal.line(static_cast<size_t>(yy))[x]) * wy[static_cast<size_t>(j)];
                     }
 
                     output[x] = static_cast<ContainedT>(value);
