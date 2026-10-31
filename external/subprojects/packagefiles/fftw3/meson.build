@@ -206,7 +206,7 @@ fftw_lib = library(
   c_args: fftw_args,
   override_options: ['b_lto=false'],
   pic: true,
-  version: '3.7.11',
+  version: host_machine.system() == 'linux' ? '3' : '3.7.11',
   soversion: '3',
   install: true,
 )
