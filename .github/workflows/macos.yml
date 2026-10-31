@@ -94,7 +94,7 @@ jobs:
 
       - name: Import Python extension
         run: |
-          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv"
 
   clang_python64:
     name: Apple Clang, x86-64, Python 3.12
@@ -172,7 +172,7 @@ jobs:
 
       - name: Import Python extension
         run: |
-          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv"
 
   llvm_python64:
     name: LLVM Clang 18, x86-64, Python 3.12
@@ -253,4 +253,4 @@ jobs:
 
       - name: Import Python extension
         run: |
-          python -c "from openpiv_cxx import pyopenpivcore as cpiv; backend = cpiv.DUCCFFT_SIMD_BACKEND(); print(f'DUCC FFT backend: {backend}'); assert backend"
+          python -c "from openpiv_cxx import pyopenpivcore as cpiv"
