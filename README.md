@@ -16,7 +16,7 @@ This project is the result of the collaborative effort of numerous researchers i
  
 ## Image Loaders
 
-Loading and storing images are crucial for any PIV software. Due to this requirement, openpiv-c--qt implements image loaders that can load, convert, and store images. Currently, there are a few extensions that are supported, but more are under development.
+Loading and storing images are crucial for any PIV software. Due to this requirement, openpiv-c++ implements image loaders that can load, convert, and store images. Currently, there are a few extensions that are supported, but more are under development.
 
 | Supported Extensions     | Decode | Encode |
 |-------------------------|--------|--------|
@@ -32,7 +32,7 @@ Loading and storing images are crucial for any PIV software. Due to this require
 The core functions of the OpenPIV c++ library are wrapped in helper functions to allow for efficient use in a Python environment. This enables for the efficiency and performance of c++ to be used in the ease of use and flexibility of Python. Users can expect significant performance increased compared to Python/NumPy based implementations. 
 
 > [!NOTE]
-> Image loaders should be disabled when the Python wrapper is built to enable better portability to cloud-based resources.
+> Image loaders should be disabled when the Python wrapper is built to enable better portability to cloud-based resources. This is mostly a Window problem when using MinGW.
 
 ## Examples
 
@@ -76,15 +76,13 @@ On Windows, the following can be used:
 * pip install meson
 
 > [!NOTE]
-> Conda or similar environment managers allow for GNU GCC toolchains to be installed in a pain-free fashion on Windows.
+> Conda or similar environment managers allow for GNU GCC toolchains to be installed in a pain-free fashion on Windows. Compartmentalizing environments is highly recommended for security reasons.
 
 To build:
 * `meson setup builddir`
 * `meson compile -C builddir`
 > [!NOTE]
 > It is good practice to setup `--prefix` flags so files are not installed on the current directory.
->
-> Mutiple SIMD dispatch paths are compiled using Highway. The highest supported SIMD type is automatically selected at runtime.
 
 Meson provides multiple build types such as debug, debugoptimized, and release. To change the build type, use the `--buildtype` flag. For example, `meson setup builddir --buildtype debugoptimized`.
 
@@ -122,7 +120,7 @@ Install directory:
     * average_subtract (executable)
     
 > [!WARNING]
-> When using GCC on Windows, libstdc++-6.dll and libgcc_s_seh-1.dll must be in PATH or next to the dll libraries in order to avoid a missing dll error. When using a different environment from where the build took place, these dll libraries would usually need to be copy and pasted next to libopenpivcore. Additionally, libduccfft needs to be next to libopenpivcore in order to run properly.
+> When using GCC on Windows, libstdc++-6.dll and libgcc_s_seh-1.dll must be in PATH or next to the dll libraries in order to avoid a missing dll error. When using a different environment from where the build took place, these dll libraries would usually need to be copy and pasted next to libopenpivcore. Additionally, libfftwf-3 needs to be next to libopenpivcore in order to run properly.
 
 ## Wrapper Build
 The wrapper uses a somewhat different build system where the aforementioned meson build system ends up being the backend. The front end is through meson-python and allows for a simplified build process through pip. Simply follow the steps below and everything should hopefully work out.
