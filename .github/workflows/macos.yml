@@ -78,7 +78,7 @@ jobs:
           built_wheels=(tmp-gcc/*.whl)
           test "${#built_wheels[@]}" -eq 1
 
-          DYLD_LIBRARY_PATH="$PWD/build-gcc/ducc_fft_disbatch:$PWD/build-gcc/openpiv" \
+          DYLD_LIBRARY_PATH="$PWD/build-gcc/external/subprojects/fftw-3.3.11:$PWD/build-gcc/openpiv" \
             delocate-wheel --require-archs x86_64 -w wheels-gcc -v "${built_wheels[0]}"
 
           repaired_wheels=(wheels-gcc/*.whl)
@@ -156,7 +156,7 @@ jobs:
           built_wheels=(tmp-clang/*.whl)
           test "${#built_wheels[@]}" -eq 1
 
-          DYLD_LIBRARY_PATH="$PWD/build-clang/ducc_fft_disbatch:$PWD/build-clang/openpiv" \
+          DYLD_LIBRARY_PATH="$PWD/build-clang/external/subprojects/fftw-3.3.11:$PWD/build-clang/openpiv" \
             delocate-wheel --require-archs x86_64 -w wheels-clang -v "${built_wheels[0]}"
 
           repaired_wheels=(wheels-clang/*.whl)
@@ -237,7 +237,7 @@ jobs:
           built_wheels=(tmp-llvm/*.whl)
           test "${#built_wheels[@]}" -eq 1
 
-          DYLD_LIBRARY_PATH="$PWD/build-llvm/ducc_fft_disbatch:$PWD/build-llvm/openpiv" \
+          DYLD_LIBRARY_PATH="$PWD/build-llvm/external/subprojects/fftw-3.3.11:$PWD/build-llvm/openpiv" \
             delocate-wheel --require-archs x86_64 -w wheels-llvm -v "${built_wheels[0]}"
 
           repaired_wheels=(wheels-llvm/*.whl)
