@@ -23,7 +23,11 @@ namespace openpiv::interp
 {
     using namespace openpiv::core;
 
-    DLL_EXPORT std::vector<double> poly_weights(double r, int32_t k);
+    DLL_EXPORT void poly_weights(
+        double r, 
+        int32_t k, 
+        std::vector<double>& w
+    );
 
 
     template <
@@ -65,7 +69,9 @@ namespace openpiv::interp
         // Precompute Lagrange weights
         auto weighting_func = [kernel_half_size](double r) -> std::vector<double>
         {
-            return poly_weights(r, kernel_half_size);
+            std::vector<double> w(2 * kernel_half_size);
+            poly_weights(r, kernel_half_size, w);
+            return w;
         };
 
         double r_min = -0.5;
@@ -227,7 +233,12 @@ namespace openpiv::interp
 
         // Same weight LUT as the existing N x N implementation.
         const lut_v weights_table = make_lut(
-            [kernel_half_size](double r) { return poly_weights(r, kernel_half_size); },
+            [kernel_half_size](double r)
+            {
+                std::vector<double> w(2 * kernel_half_size);
+                poly_weights(r, kernel_half_size, w);
+                return w;
+            },
             512, -0.5, 0.5
         );
 
