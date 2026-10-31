@@ -57,7 +57,6 @@ setup = [
 install = ['--skip-subprojects=fmt']
 
 [tool.meson-python.wheel]
-[tool.meson-python.wheel]
 exclude = [
   "{libdir_shared}/*fftw3f*.dll*",
   "{libdir_shared}/libopenpivcore.dll*",
