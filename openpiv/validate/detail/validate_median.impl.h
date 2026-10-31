@@ -2,6 +2,7 @@
 
 #include <type_traits>
 #include <cmath>
+#include <limits>
 
 #include "core/image.h"
 #include "core/image_type_traits.h"
@@ -19,11 +20,10 @@ namespace openpiv::validate
     template < 
         typename ContainedT,
         typename ValueT,
-        typename ResultT,
         typename
     >
-    ResultT validate_median(
-        const core::vector_point_data<ContainedT>& field_data,
+    void validate_median(
+        core::vector_point_data<ContainedT>& field_data,
         ValueT threshold_u,
         ValueT threshold_v
     ) {
@@ -34,13 +34,20 @@ namespace openpiv::validate
         // Minimum amount of elements in kernel
         const uint32_t min_kernel_size = kernel_full_size;
 
-        ResultT invalid{ field_data.u.size() };
+        const core::flag_t invalid_flag = static_cast<core::flag_t>(core::FLAG::INVALID);
+        const core::flag_t masked_flag = static_cast<core::flag_t>(core::FLAG::MASKED);
+        const ValueT nan = std::numeric_limits<ValueT>::quiet_NaN();
+        core::image<core::g<core::flag_t>> invalid{ field_data.u.size() };
 
         // Lambda function to process each vector point
         auto processor = [&]( uint32_t ind )
         {
             const int32_t x = static_cast<int32_t>(ind % invalid.width());
             const int32_t y = static_cast<int32_t>(ind / invalid.width());
+
+            const core::flag_t flag = field_data.flag[{x,y}];
+            if (flag == masked_flag || flag == invalid_flag)
+                return;
 
             const auto vector_u = field_data.u[{x,y}];
             const auto vector_v = field_data.v[{x,y}];
@@ -49,7 +56,7 @@ namespace openpiv::validate
             if ( !std::isfinite(static_cast<ValueT>(vector_u)) ||
                  !std::isfinite(static_cast<ValueT>(vector_v))
             ) {
-                invalid[{x,y}] = 1;
+                invalid[{x,y}] = invalid_flag;
                 return;
             }
 
@@ -65,6 +72,7 @@ namespace openpiv::validate
                 const size_t jj = core::mirror_index<int32_t>(y- kernel_half_size + j, invalid.height());
                 const ContainedT* row_u = field_data.u.line(jj);
                 const ContainedT* row_v = field_data.v.line(jj);
+                const auto* row_flag = field_data.flag.line(jj);
 
                 for (int32_t i = 0; i < kernel_full_size; ++i)
                 {
@@ -73,6 +81,10 @@ namespace openpiv::validate
                         continue;
                     
                     const size_t ii = core::mirror_index<int32_t>(x - kernel_half_size + i, invalid.width());
+
+                    const core::flag_t neighbor_flag = row_flag[ii];
+                    if (neighbor_flag == masked_flag || neighbor_flag == invalid_flag)
+                        continue;
 
                     const ValueT neighbor_u = static_cast<ValueT>(row_u[ii]);
                     const ValueT neighbor_v = static_cast<ValueT>(row_v[ii]);
@@ -93,7 +105,7 @@ namespace openpiv::validate
             // If not enough values are found within kernels, flag as invalid
             if ( (kernel_u.size() < min_kernel_size) || (kernel_v.size() < min_kernel_size) )
             {
-                // invalid[{x,y}] = 1;
+                // invalid[{x,y}] = invalid_flag;
                 return;
             }
 
@@ -101,7 +113,7 @@ namespace openpiv::validate
             if ( (std::abs(vector_u - u_med) > threshold_u) || 
                  (std::abs(vector_v - v_med) > threshold_v) )
             {
-                invalid[{x,y}] = 1;
+                invalid[{x,y}] = invalid_flag;
             }
 
         };
@@ -112,7 +124,16 @@ namespace openpiv::validate
             processor(i);
         }
 
-        return invalid;
+        // Apply rejections after all neighborhoods have been evaluated
+        for (uint32_t i=0; i < invalid.pixel_count(); i++)
+        {
+            if (invalid[i])
+            {
+                field_data.flag[i] = invalid_flag;
+                field_data.u[i] = nan;
+                field_data.v[i] = nan;
+            }
+        }
     }
 
 } // end of namespace

@@ -1,11 +1,12 @@
 project(
   'OpenPIV-c++',
   'cpp',
-  version: '0.2.0',
+  version: '0.3.0',
   license: 'GPL-3',
-  meson_version: '>= 1.1.0',
+  meson_version: '>= 1.4.0',
   subproject_dir: 'external/subprojects',
   default_options: [
+    'wrap_mode=nodownload',
     'buildtype=release',
     'cpp_std=c++17',
     'warning_level=3'
@@ -62,7 +63,6 @@ endif
 
 if cxx_compiler != 'msvc'
   _gnu_args = cpp.get_supported_arguments(
-    '-ffast-math',
     '-Wno-unknown-pragmas',
     '-mthreads'
   )
@@ -135,20 +135,19 @@ if not fmt_dep.found()
   fmt_dep = fmt.get_variable('fmt_header_only_dep')
 endif
 
-# Build the dynamically dispatched DUCC FFT backend before openpivcore.
-# The dependency declared by this subdirectory also carries the public
-# ducc_fft.h include path to every target which instantiates DuccFFT.
-subdir('ducc_fft_disbatch')
+# Build the prepared FFTW sources with the project's native C toolchain.
+fftw = subproject('fftw3', default_options: ['default_library=shared'])
+fftw_dep = fftw.get_variable('fftw_dep')
 
 libopenpivcore_deps = [
-  duccfft_dep,
+  fftw_dep,
   fmt_dep,
   thread_dep
 ]
 
 openpiv_deps = [
   cxxopts_dep,
-  duccfft_dep,
+  fftw_dep,
   fmt_dep,
   thread_dep
 ]

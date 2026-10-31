@@ -12,8 +12,6 @@
 #include "piv/correlation_utils.h"
 #include "piv/piv_common.h"
 
-#include "algos/duccfft_backend.h"
-
 // pybind
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -23,15 +21,6 @@
 namespace py = pybind11;
 
 using namespace openpiv;
-
-void add_ducc_simd_backend(py::module& m)
-{
-    m.def(
-        "DUCCFFT_SIMD_BACKEND",
-        &algos::duccfft_simd_backend,
-        "Return the SIMD backend selected by Highway."
-    );
-}
 
 void add_piv_firstpass(py::module& m)
 {

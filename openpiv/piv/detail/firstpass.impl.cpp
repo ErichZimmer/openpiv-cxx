@@ -10,7 +10,7 @@
 #include <tuple>
 
 #include "algos/pocket_fft.h"
-#include "algos/duccfft.h"
+#include "algos/fftw.h"
 #include "algos/stats.h"
 
 #include "core/enumerate.h"
@@ -51,6 +51,13 @@ namespace openpiv::piv
         const uint32_t min_window_size = 8;
         const uint32_t max_window_size = 1024;
         const uint32_t min_search_size = 16; // if window_size is below this, disable limit_search
+
+        // Make sure frame a and frame b are the same size
+        if (image_a.size() != image_b.size())
+        {
+            core::exception_builder<std::runtime_error>()
+                << "image_a and image_b sizes must be same dimensions";
+        }
 
         // Make sure that window sizes are some sane value
         if ((window_size[0] > max_window_size) ||
@@ -110,74 +117,15 @@ namespace openpiv::piv
 
         // Get FFT correlator (this is somewhat ugly due to pointer to function, but is the most concise?)
         auto pocketfft_algo = algos::PocketFFT<FloatT>( corr_window_size );
-        auto pocketfft_correlator = &algos::PocketFFT<FloatT>::cross_correlate_real<core::image, ContainerT>;
+        auto pocketfft_correlator = &algos::PocketFFT<FloatT>::cross_correlate_real_inplace<core::image, ContainerT>;
 
-        auto duccfft_algo = algos::DuccFFT<FloatT>( corr_window_size );
-        auto duccfft_correlator = &algos::DuccFFT<FloatT>::cross_correlate_real<core::image, ContainerT>;
+        auto fftw_algo = algos::FFTW<FloatT>( corr_window_size, false );
+        auto fftw_correlator = &algos::FFTW<FloatT>::cross_correlate_real_inplace<core::image, ContainerT>;
 
 
         // Uniform weights for FFT correlation
         // TODO: Add Gaussian weights
         auto corr_weights = ImageT(corr_window_size);
-        
-        if (zero_pad)
-        {
-            // Gaussian weights for linear correlation to attenuate the periodic signals
-            // While not really zero padding, it is done this way to avoid spectral leakage            
-/*          
-            core::apply(
-                corr_weights,
-                [
-                    w = corr_weights.width(),
-                    h = corr_weights.height()
-                ]
-                (auto i, auto) -> ContainerT
-                {
-                    const size_t x = i % w;
-                    const size_t y = i / w;
-
-                    const double cx = (static_cast<double>(w) - 1.0) / 2.0;
-                    const double cy = (static_cast<double>(h) - 1.0) / 2.0;
-
-                    const double dx = (static_cast<double>(x) - cx) / static_cast<double>(w);
-                    const double dy = (static_cast<double>(y) - cy) / static_cast<double>(h);
-
-                    return ContainerT( std::exp(-16.0 * (dx * dx + dy * dy)) );
-                }
-            );
-*/
-
-            // Currently, Gaussian weighting seems a little worse than zero-padding/linear correlation
-            core::apply(
-                corr_weights,
-                [
-                    w  = corr_weights.width(),
-                    h  = corr_weights.height(),
-                    wx = static_cast<size_t>(window_size[0]),
-                    wy = static_cast<size_t>(window_size[1])
-                ]
-                (auto i, auto) -> ContainerT
-                {
-                    const size_t index = static_cast<size_t>(i);
-                    const size_t x = index % w;
-                    const size_t y = index / w;
-
-                    const size_t x0 = (w - wx) / 2;
-                    const size_t y0 = (h - wy) / 2;
-
-                    const bool inside =
-                        x >= x0 && x < x0 + wx &&
-                        y >= y0 && y < y0 + wy;
-
-                    return inside ? ContainerT(1.0) : ContainerT(0.0);
-                }
-            );
-        }
-        else
-        {
-            // Uniform weights for circular correlation
-            core::fill(corr_weights, ContainerT(1.0));
-        }
 
         // Container for vector field
         auto field_coords = core::grid_coords(field_shape);
@@ -188,9 +136,10 @@ namespace openpiv::piv
         {
             ImageT a;
             ImageT b;
+            ImageT output;
 
             explicit scratch_memory(const core::size& size)
-                : a(size), b(size)
+                : a(size), b(size), output(size)
             {}
         };
 
@@ -198,11 +147,10 @@ namespace openpiv::piv
         auto processor = [
             &image_a,
             &image_b,
-            &corr_weights,
             &pocketfft_algo,
             &pocketfft_correlator,
-            &duccfft_algo,
-            &duccfft_correlator,
+            &fftw_algo,
+            &fftw_correlator,
             simd,
             zero_pad,
             limit_search,
@@ -210,42 +158,44 @@ namespace openpiv::piv
             &field_coords,
             &field_data
         ]( size_t i, const core::rect& ia, scratch_memory& scratch_local)
-        {
-            const core::rect extract_window = zero_pad ? ia.dilate(2.0) : ia;
-            
+        {            
             auto& iw_a = scratch_local.a;
             auto& iw_b = scratch_local.b;
+            auto& output = scratch_local.output;
 
             // Get relavant data from the images
-            detail::extract_with_padding(image_a, extract_window, iw_a);
-            detail::extract_with_padding(image_b, extract_window, iw_b);
+            detail::extract_interrogation_window(image_a, ia, iw_a);
+            detail::extract_interrogation_window(image_b, ia, iw_b);
 
             // Mean subtraction to improve cross-correlation quality
-            auto view_a_mean = algos::find_mean(iw_a);
-            auto view_b_mean = algos::find_mean(iw_b);
+            auto valid_iw_rect = iw_a.rect();
 
-            iw_a = iw_a - ContainerT(view_a_mean);
-            iw_b = iw_b - ContainerT(view_b_mean);
-
-            iw_a = iw_a * corr_weights;
-            iw_b = iw_b * corr_weights;
-
-            // On gaussian weights, re-center around mean
-/*
             if (zero_pad)
-            {
-                auto view_a_mean2 = algos::find_mean(iw_a);
-                auto view_b_mean2 = algos::find_mean(iw_b);
+                valid_iw_rect = iw_a.rect().dilate(0.5);
 
-                iw_a = iw_a - ContainerT(view_a_mean2);
-                iw_b = iw_b - ContainerT(view_b_mean2);
+            auto iw_a_view = core::create_image_view(iw_a, valid_iw_rect);
+            auto iw_b_view = core::create_image_view(iw_b, valid_iw_rect);
+
+            const auto view_a_mean = algos::find_mean(iw_a_view);
+            const auto view_b_mean = algos::find_mean(iw_b_view);
+
+            // TODO: Put this in its own function
+            for (uint32_t y = 0; y < iw_a_view.height(); ++y)
+            {
+                auto* line_a = iw_a_view.line(y);
+                auto* line_b = iw_b_view.line(y);
+
+                for (uint32_t x = 0; x < iw_a_view.width(); ++x)
+                {
+                    line_a[x].v -= view_a_mean.v;
+                    line_b[x].v -= view_b_mean.v;
+                }
             }
-*/
 
             // Correlate the image extracts
-            ImageT output = simd
-                ? (duccfft_algo.*duccfft_correlator)(iw_a, iw_b)
-                : (pocketfft_algo.*pocketfft_correlator)(iw_a, iw_b);
+            (simd)
+                ? (fftw_algo.*fftw_correlator)(iw_a, iw_b, output)
+                : (pocketfft_algo.*pocketfft_correlator)(iw_a, iw_b, output);
 
             // Reduce output correlation matrix size to only contain valid values
             double dilation_ratio = 1.0;
@@ -265,67 +215,107 @@ namespace openpiv::piv
             auto corr_mean = algos::find_mean(valid_corr);
 
             // Compute denominator to normalize correlatioon plane
-            ContainerT energy_a = 0.0;
-            ContainerT energy_b = 0.0;
+            const ContainerT energy_a = detail::find_squared_energy(iw_a_view);
+            const ContainerT energy_b = detail::find_squared_energy(iw_b_view);
 
-            for (std::size_t i = 0; i < iw_a.pixel_count(); ++i)
-            {
-                const ContainerT a = iw_a[i].v;
-                const ContainerT b = iw_b[i].v;
-
-                energy_a = energy_a + (a * a);
-                energy_b = energy_b + (b * b);
-            }
-
-            const ContainerT denominator =
+            ContainerT denominator =
                 static_cast<ContainerT>(iw_a.pixel_count()) *
                 std::sqrt(energy_a) *
                 std::sqrt(energy_b);
+            
+            // Guard against zero denominator in case of blank windows
+            if (denominator == ContainerT(0.0))
+                denominator = ContainerT(1.0);
 
             // find peaks
             // core::peaks_t<core::g_f64> peaks;
-            constexpr uint16_t num_peaks = 2;
+            constexpr uint16_t num_peaks = 3;
             constexpr uint16_t min_peak_count = 1;
             constexpr uint16_t radius = 1;
 
-            auto peaks = core::find_peaks_brute( valid_corr, num_peaks, radius );
+            auto peaks = core::find_peaks_brute(
+                valid_corr, 
+                num_peaks,
+                radius 
+            );
 
             // Add grid to data
-            auto bl = extract_window.bottomLeft();
-            auto midpoint = ia.midpoint();
+            auto bl = ia.bottomLeft();
+            const auto midpoint = ia.midpoint();
 
             field_coords[i] = midpoint;
             //field_coords[i][1] = image_a.height() - midpoint[1];
+
+            // Correct zero padding offsets
+            if ( zero_pad )
+            {
+                bl[0] -= static_cast<int32_t>( (iw_a.width() - ia.width()) / 2 );
+                bl[1] -= static_cast<int32_t>( (iw_a.height() - ia.height()) / 2 );
+            }
             
 
             // Early escape if not enough peaks were found
             if ( peaks.size() < min_peak_count )
             {
-                field_data.u[i]    = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
-                field_data.v[i]    = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
-                field_data.s2n[i]  = grid_data_t(0);
-                field_data.p2p[i]  = grid_data_t(0);
-                field_data.peak[i] = grid_data_t(0);
-                field_data.flag[i] = static_cast<uint8_t>(FLAG::INVALID);
+                field_data.u[i]     = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
+                field_data.v[i]     = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
+                field_data.s2n[i]   = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
+                field_data.p2p[i]   = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
+                field_data.peak[i]  = std::numeric_limits<grid_data_t::value_t>::quiet_NaN();
+                field_data.peak_ind[i] = 0;
+                field_data.flag[i]  = static_cast<core::flag_t>(FLAG::INVALID);
 
                 return;
             }
             
             // Get subpixel information and add it to vector field data
-            auto peak = peaks[0];
-            core::point2<core::grid_coords_t> peak_location{};
+            core::point2<core::grid_coords_t> subpixel_interp[num_peaks] = {};
 
-            if ( core::fit_log_safe(peak, radius) )
-                peak_location = core::fit_simple_gaussian( peak );
-            else
-                peak_location = core::fit_simple_parabolic( peak );
+            for (uint32_t peak_ind=0; peak_ind<peaks.size(); peak_ind++)
+            {
+                auto peak = peaks[peak_ind];
+                core::point2<core::grid_coords_t> peak_location{};
+
+                if ( core::fit_log_safe(peak, radius) )
+                    peak_location = core::fit_simple_gaussian( peak );
+                else
+                    peak_location = core::fit_simple_parabolic( peak );
+
+                subpixel_interp[peak_ind] = peak_location;
+            }
 
             // u and v signs are swapped to match openpiv
-            field_data.u[i] = -(midpoint[0] - (bl[0] + peak_location[0]));
-            field_data.v[i] = -(midpoint[1] - (bl[1] + peak_location[1]));
-            field_data.s2n[i]  = peaks[0][{1, 1}] / corr_mean;
+            field_data.u1[i] = -(midpoint[0] - (bl[0] + subpixel_interp[0][0]));
+            field_data.v1[i] = -(midpoint[1] - (bl[1] + subpixel_interp[0][1]));
+            field_data.s2n1[i]  = peaks[0][{1, 1}] / corr_mean;
+            field_data.peak1[i] = peaks[0][{1, 1}] / denominator;
+
+            // Now populate secondary peak info
+            if (peaks.size() > 1)
+            {
+                field_data.u2[i] = -(midpoint[0] - (bl[0] + subpixel_interp[1][0]));
+                field_data.v2[i] = -(midpoint[1] - (bl[1] + subpixel_interp[1][1]));
+                field_data.s2n2[i]  = peaks[1][{1, 1}] / corr_mean;
+                field_data.peak2[i] = peaks[1][{1, 1}] / denominator;
+            }
+
+            // Now populate tertiary peak info
+            if (peaks.size() > 2)
+            {
+                field_data.u3[i] = -(midpoint[0] - (bl[0] + subpixel_interp[2][0]));
+                field_data.v3[i] = -(midpoint[1] - (bl[1] + subpixel_interp[2][1]));
+                field_data.s2n3[i]  = peaks[2][{1, 1}] / corr_mean;
+                field_data.peak3[i] = peaks[2][{1, 1}] / denominator;
+            }
+
+            // Initialize the working fields from the primary peak
+            field_data.u[i]    = field_data.u1[i];
+            field_data.v[i]    = field_data.v1[i];
+            field_data.s2n[i]  = field_data.s2n1[i];
+            field_data.peak[i] = field_data.peak1[i];
             field_data.p2p[i]  = (peaks.size() > min_peak_count) ? peaks[0][{1, 1}] / peaks[1][{1, 1}] : 1.0;
-            field_data.peak[i] = peaks[0][{1, 1}] / denominator;
+            field_data.peak_ind[i] = 0;
+            field_data.flag[i] = static_cast<core::flag_t>(FLAG::VALID);
         };
 
         if (thread_count > 1)

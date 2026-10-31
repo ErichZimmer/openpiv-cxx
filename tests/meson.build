@@ -9,6 +9,7 @@ test_source_files = [
   'image_utils_test.cpp',
   'image_view_test.cpp',
   'log_test.cpp',
+  'map_polynomial_test.cpp',
   'pixel_types_test.cpp',
   'point_test.cpp',
   'range_test.cpp',
@@ -16,6 +17,7 @@ test_source_files = [
   'size_test.cpp',
   'stream_utils_test.cpp',
   'util_test.cpp',
+  'vector_field_test.cpp',
   'vector_test.cpp'
 ]
 
@@ -25,7 +27,7 @@ foreach test_file: test_source_files
   exec = executable(
     source_name,
     test_file,
-    include_directories: openpiv_include,
+    include_directories: [openpiv_include, threadlib_include],
     dependencies: openpiv_deps + [catch2_dep],
     cpp_args: ['-D_USE_MATH_DEFINES'],
     link_with: openpiv_lib
@@ -39,6 +41,17 @@ foreach test_file: test_source_files
   )
   
 endforeach
+
+fftw_test = executable(
+  'fftw_test',
+  'fftw_test.cpp',
+  include_directories: openpiv_include,
+  dependencies: openpiv_deps,
+  cpp_args: ['-D_USE_MATH_DEFINES'],
+  link_with: openpiv_lib,
+)
+
+test('fftw_test', fftw_test, timeout: 120)
 
 if found_benchmark
   benchmark_source_files = [

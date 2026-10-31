@@ -382,6 +382,12 @@ def convert_vector_to_grid_data_type(
     p2p: np.ndarray | None=None,
     peak: np.ndarray | None=None,
     flag: np.ndarray | None=None,
+    *,
+    u2: np.ndarray | None=None,
+    v2: np.ndarray | None=None,
+    s2n2: np.ndarray | None=None,
+    peak2: np.ndarray | None=None,
+    peak_ind: np.ndarray | None=None,
 ) -> cpiv.grid_data:
     '''Convert vector-field arrays into OpenPIV C++ grid data.
 
@@ -403,6 +409,16 @@ def convert_vector_to_grid_data_type(
         Optional primary correlation-peak value array.
     flag : np.ndarray or None
         Optional vector-status flag array.
+    u2 : np.ndarray or None
+        Optional secondary-candidate u-displacement array.
+    v2 : np.ndarray or None
+        Optional secondary-candidate v-displacement array.
+    s2n2 : np.ndarray or None
+        Optional secondary-candidate signal-to-noise ratio array.
+    peak2 : np.ndarray or None
+        Optional secondary correlation-peak value array.
+    peak_ind : np.ndarray or None
+        Optional zero-based selected-candidate index array.
 
     Returns
     -------
@@ -426,6 +442,11 @@ def convert_vector_to_grid_data_type(
         'p2p': p2p,
         'peak': peak,
         'flag': flag,
+        'u2': u2,
+        'v2': v2,
+        's2n2': s2n2,
+        'peak2': peak2,
+        'peak_ind': peak_ind,
     }
     checked_arrays: dict[str, np.ndarray] = {}
     for name, array in optional_arrays.items():

@@ -71,7 +71,7 @@ namespace openpiv::piv
         core::image<ContainedT> fine_data(fine_grid.size());
 
         // Interpolate coarse data onto fine grid
-        interp::lagrange_interp2d<core::image, ContainedT>(
+        interp::lagrange_interp2n<core::image, ContainedT>(
             coarse_data,
             fine_grid,
             fine_data,
@@ -101,7 +101,7 @@ namespace openpiv::piv
     ) {
         out.resize(fine_grid.size());
 
-        interp::lagrange_interp2d<core::image, ContainedT>(
+        interp::lagrange_interp2n<core::image, ContainedT>(
             coarse_data,
             fine_grid,
             out,

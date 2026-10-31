@@ -16,7 +16,7 @@ This project is the result of the collaborative effort of numerous researchers i
  
 ## Image Loaders
 
-Loading and storing images are crucial for any PIV software. Due to this requirement, openpiv-c--qt implements image loaders that can load, convert, and store images. Currently, there are a few extensions that are supported, but more are under development.
+Loading and storing images are crucial for any PIV software. Due to this requirement, openpiv-c++ implements image loaders that can load, convert, and store images. Currently, there are a few extensions that are supported, but more are under development.
 
 | Supported Extensions     | Decode | Encode |
 |-------------------------|--------|--------|
@@ -32,7 +32,7 @@ Loading and storing images are crucial for any PIV software. Due to this require
 The core functions of the OpenPIV c++ library are wrapped in helper functions to allow for efficient use in a Python environment. This enables for the efficiency and performance of c++ to be used in the ease of use and flexibility of Python. Users can expect significant performance increased compared to Python/NumPy based implementations. 
 
 > [!NOTE]
-> Image loaders should be disabled when the Python wrapper is built to enable better portability to cloud-based resources.
+> Image loaders should be disabled when the Python wrapper is built to enable better portability to cloud-based resources. This is mostly a Window problem when using MinGW.
 
 ## Examples
 
@@ -76,15 +76,13 @@ On Windows, the following can be used:
 * pip install meson
 
 > [!NOTE]
-> Conda or similar environment managers allow for GNU GCC toolchains to be installed in a pain-free fashion on Windows.
+> Conda or similar environment managers allow for GNU GCC toolchains to be installed in a pain-free fashion on Windows. Compartmentalizing environments is highly recommended for security reasons.
 
 To build:
 * `meson setup builddir`
 * `meson compile -C builddir`
 > [!NOTE]
 > It is good practice to setup `--prefix` flags so files are not installed on the current directory.
->
-> Mutiple SIMD dispatch paths are compiled using Highway. The highest supported SIMD type is automatically selected at runtime.
 
 Meson provides multiple build types such as debug, debugoptimized, and release. To change the build type, use the `--buildtype` flag. For example, `meson setup builddir --buildtype debugoptimized`.
 
@@ -122,7 +120,7 @@ Install directory:
     * average_subtract (executable)
     
 > [!WARNING]
-> When using GCC on Windows, libstdc++-6.dll and libgcc_s_seh-1.dll must be in PATH or next to the dll libraries in order to avoid a missing dll error. When using a different environment from where the build took place, these dll libraries would usually need to be copy and pasted next to libopenpivcore. Additionally, libduccfft needs to be next to libopenpivcore in order to run properly.
+> When using GCC on Windows, libstdc++-6.dll and libgcc_s_seh-1.dll must be in PATH or next to the dll libraries in order to avoid a missing dll error. When using a different environment from where the build took place, these dll libraries would usually need to be copy and pasted next to libopenpivcore. Additionally, libfftwf-3 needs to be next to libopenpivcore in order to run properly.
 
 ## Wrapper Build
 The wrapper uses a somewhat different build system where the aforementioned meson build system ends up being the backend. The front end is through meson-python and allows for a simplified build process through pip. Simply follow the steps below and everything should hopefully work out.
@@ -134,7 +132,8 @@ To initiate the build process, run the following command from the root directory
 
  Windows:
 Make sure delvewheel is installed (e.g., `pip install delvewheel`). Then run this command:
-* `delvewheel repair tmp/*.whl --add-path ./builddir/openpiv --add-path ./builddir/ducc_fft_disbatch -w ./wheelscls`
+* `delvewheel repair tmp/*.whl --add-path ./builddir/openpiv --add-path ./builddir/external/subprojects/fftw-3.3.11 -w ./wheels
+`
 
 Linux/Unix:
 Make sure auditwheel is installed (e.g., `pip install auditwheel`). Then run this command:
@@ -292,10 +291,6 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
     * [x] use SIMD?
     * [x] real -> complex FFT/correlation of real data
     * [x] normalized minimum quadratic differences (very robust)
-  * direct correlation
-    * [ ] full window correlation
-    * [ ] partial window correlation (e.g., 3x3 correlation for enhancing FFT results)
-    * [ ] use SIMD?
   * image deformation
     * [x] shifted linear image deformation interpolation (same as first degree polynomial for my impl)
     * [x] polynomial interpolation (lookup tables-based, so super fast!!)
@@ -307,13 +302,12 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
     * [x] 3 point parabolic peak fit
     * [x] 3 point centroid peak fit
     * [x] 3x3 Gaussian closed form solution
-    * [ ] nxn least squares Gaussian peak fit (optimized via pseudo-inverse)
+    * [ ] nxn least squares Gaussian peak fit (optimized via pseudo-inverse; pinv can be pre-computed for speed and simplicity)
     * [ ] nxn non-linear Gaussian peak fit (optimized via Levenberg-Marquardt or something similar)
     * [ ] nxn centroid peak fit (can be used for calibration marker detection)
   * multi-pass PIV
     * [x] First pass w/ multi-threading
     * [x] Multi-pass image deform w/ multi-threading
-    * [ ] Failed correlations can use larger correlation window or imputation
 * image processing
   * filters
     * [ ] change image_view to use array of pointers for each row?
@@ -323,7 +317,7 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
     * [ ] contrast stretch filter (based on local percentile kernels)
     * [ ] median filter
     * [ ] min/max normalization filter
-    * [ ] smoothn from OpenPIV-Python (requires L-BFGS-B impl)
+    * [ ] smoothn from OpenPIV-Python (w/o nonlinear smooth param optimization)
   * adjustment
     * [ ] crop (region of interest/ROI)
     * [ ] skew
@@ -337,14 +331,16 @@ As you can see, GCC with SIMD enabled can have very significant performance incr
     * [ ] read mask image
     * [ ] write mask image
     * [ ] automatically create mask image
-  * validation
-   * [x] local median
-   * [x] local normalized median
-   * [x] local difference
-   * [x] z_score
-   * [x] u/v range
-   * [x] peak to peak ratio
-   * [x] signal to noise ratio
+* validation
+  * [x] local median
+  * [x] local normalized median
+  * [x] local difference
+  * [x] z_score
+  * [x] u/v range
+  * [x] peak to peak ratio
+  * [x] signal to noise ratio
+  * [x] secondary peak substitution
+  * [x] impute nans (iterative solver; spring analogy alternative)
 * examples
   * [x] parallel cross-correlate
   * [x] image processing

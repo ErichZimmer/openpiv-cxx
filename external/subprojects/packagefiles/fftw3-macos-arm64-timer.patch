@@ -1,0 +1,14 @@
+Avoid duplicate timer definitions on macOS ARM64.
+
+Backport the HAVE_TICK_COUNTER guard from FFTW upstream:
+https://github.com/FFTW/fftw3/commit/4fca9817e68f77c118e4704562d63e45c02d38bf
+
+diff --git a/kernel/cycle.h b/kernel/cycle.h
+--- a/kernel/cycle.h
++++ b/kernel/cycle.h
+@@ -542,4 +542,4 @@
+-#if defined(__aarch64__) && (defined(__APPLE__) || defined(HAVE_ARMV8_CNTVCT_EL0)) && !defined(HAVE_ARMV8_PMCCNTR_EL0)
++#if defined(__aarch64__) && (defined(__APPLE__) || defined(HAVE_ARMV8_CNTVCT_EL0)) && !defined(HAVE_ARMV8_PMCCNTR_EL0) && !defined(HAVE_TICK_COUNTER)
+ typedef uint64_t ticks;
+ static inline ticks getticks(void)
+ {

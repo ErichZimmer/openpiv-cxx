@@ -15,14 +15,13 @@ namespace openpiv::validate
     template < 
         typename ContainedT,
         typename ValueT = typename ContainedT::value_t,
-        typename ResultT = core::image<g_8>,
         typename = typename std::enable_if_t<
             is_real_mono_pixeltype_v<ContainedT> &&
             std::is_floating_point_v<ValueT>
         >
     >
-    ResultT validate_range(
-        const core::vector_point_data<ContainedT>& field_data,
+    void validate_range(
+        core::vector_point_data<ContainedT>& field_data,
         std::array<ValueT, 2> threshold_u,
         std::array<ValueT, 2> threshold_v
     );

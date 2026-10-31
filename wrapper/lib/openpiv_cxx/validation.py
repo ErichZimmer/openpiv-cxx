@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from numbers import Real
 from typing import Any
-from typing import TypeAlias
 
 import numpy as np
 
@@ -11,9 +10,6 @@ from .parsing import (
     convert_stats_to_grid_data_type,
     convert_vector_to_grid_data_type,
 )
-
-ValidationResult: TypeAlias = np.ndarray | cpiv.image_g_u8
-
 
 __all__ = [
     'range_val',
@@ -262,43 +258,13 @@ def _threshold_pair(
     return lower, upper
 
 
-def _format_flag(flag: Any, return_raw: bool) -> Any:
-    '''Format a C++ validation flag image for Python callers.
-
-    Parameters
-    ----------
-    flag : cpiv.image_g_8
-        C++ validation flag image.
-    return_raw : bool
-        If True, return ``flag`` unchanged. Otherwise, return a boolean NumPy
-        copy.
-
-    Returns
-    -------
-    invalid : np.ndarray or cpiv.image_g_8
-        Boolean NumPy mask or the original C++ flag image.
-
-    Raises
-    ------
-    TypeError
-        If ``return_raw`` is not a bool.
-
-    '''
-    if not isinstance(return_raw, bool):
-        raise TypeError('return_raw must be a bool')
-    if return_raw:
-        return flag
-    return np.array(flag, dtype=np.bool_, copy=True)
-
-
 def range_val(
     u: np.ndarray | cpiv.grid_data | None=None,
     v: np.ndarray | None=None,
     u_threshold: tuple[float, float] | list[float] | None=None,
     v_threshold: tuple[float, float] | list[float] | None=None,
     field_data: cpiv.grid_data | None=None,
-    return_raw: bool=False,
-) -> ValidationResult:
+) -> np.ndarray:
     '''Validate vectors against global component ranges.
 
     Flag a vector when its u or v component lies outside the corresponding
@@ -318,14 +284,12 @@ def range_val(
         Inclusive ``(minimum, maximum)`` range for v displacements.
     field_data : cpiv.grid_data or None
         Reusable C++ vector data. It cannot be combined with u or v arrays.
-    return_raw : bool
-        If True, return the C++ flag image. Otherwise, return a boolean NumPy
-        copy.
 
     Returns
     -------
-    invalid : np.ndarray or cpiv.image_g_8
-        Flag image with nonzero or True values at invalid vectors.
+    flags : np.ndarray
+        Independent uint8 copy of the accumulated vector-status flags:
+        0 valid, 1 invalid, 2 substituted, 3 interpolated, and 4 masked.
 
     Raises
     ------
@@ -337,12 +301,19 @@ def range_val(
     RuntimeError
         If the underlying C++ validation routine fails.
 
+    Notes
+    -----
+    Supplied grid_data is updated in place. Rejected working u and v become
+    NaN. Masked locations, stored candidates, and peak_ind are unchanged;
+    passing checks preserve existing status flags. NumPy inputs are copied
+    into temporary grid_data, so the input arrays are unchanged.
+
     '''
     data = _resolve_vector_field(u, v, field_data)
     threshold_u = _threshold_pair(u_threshold, 'u_threshold')
     threshold_v = _threshold_pair(v_threshold, 'v_threshold')
-    flag = cpiv.validate_range(data, threshold_u, threshold_v)
-    return _format_flag(flag, return_raw)
+    cpiv.validate_range(data, threshold_u, threshold_v)
+    return np.array(data.flag, copy=True)
 
 
 def global_std_val(
@@ -350,13 +321,14 @@ def global_std_val(
     v: np.ndarray | None=None,
     std_threshold: float=3.0,
     field_data: cpiv.grid_data | None=None,
-    return_raw: bool=False,
-) -> ValidationResult:
+) -> np.ndarray:
     '''Validate vectors against global standard-deviation limits.
 
     Compute the global mean and standard deviation of each displacement
     component and flag vectors farther than ``std_threshold`` standard
-    deviations from either component mean. Nonfinite vectors are also flagged.
+    deviations from either component mean. Masked, already-invalid, and
+    nonfinite vectors are excluded from the statistics; nonfinite unmasked
+    vectors are rejected.
 
     Parameters
     ----------
@@ -370,14 +342,12 @@ def global_std_val(
         component mean.
     field_data : cpiv.grid_data or None
         Reusable C++ vector data. It cannot be combined with u or v arrays.
-    return_raw : bool
-        If True, return the C++ flag image. Otherwise, return a boolean NumPy
-        copy.
 
     Returns
     -------
-    invalid : np.ndarray or cpiv.image_g_8
-        Flag image with nonzero or True values at invalid vectors.
+    flags : np.ndarray
+        Independent uint8 copy of the accumulated vector-status flags:
+        0 valid, 1 invalid, 2 substituted, 3 interpolated, and 4 masked.
 
     Raises
     ------
@@ -389,19 +359,25 @@ def global_std_val(
     RuntimeError
         If the underlying C++ validation routine fails.
 
+    Notes
+    -----
+    Supplied grid_data is updated in place. Rejected working u and v become
+    NaN. Masked locations, stored candidates, and peak_ind are unchanged;
+    passing checks preserve existing status flags. NumPy inputs are copied
+    into temporary grid_data, so the input arrays are unchanged.
+
     '''
     data = _resolve_vector_field(u, v, field_data)
     threshold = _nonnegative_threshold(std_threshold, 'std_threshold')
-    flag = cpiv.validate_z_score(data, threshold)
-    return _format_flag(flag, return_raw)
+    cpiv.validate_z_score(data, threshold)
+    return np.array(data.flag, copy=True)
 
 
 def sig2noise_val(
     sig: np.ndarray | cpiv.grid_data | None=None,
     threshold: float | None=None,
     field_data: cpiv.grid_data | None=None,
-    return_raw: bool=False,
-) -> ValidationResult:
+) -> np.ndarray:
     '''Validate vectors using their signal-to-noise ratios.
 
     Flag vectors whose signal-to-noise ratio is less than ``threshold``.
@@ -417,14 +393,12 @@ def sig2noise_val(
         Minimum accepted signal-to-noise ratio.
     field_data : cpiv.grid_data or None
         Reusable C++ grid data. It cannot be combined with ``sig``.
-    return_raw : bool
-        If True, return the C++ flag image. Otherwise, return a boolean NumPy
-        copy.
 
     Returns
     -------
-    invalid : np.ndarray or cpiv.image_g_8
-        Flag image with nonzero or True values below the threshold.
+    flags : np.ndarray
+        Independent uint8 copy of the accumulated vector-status flags:
+        0 valid, 1 invalid, 2 substituted, 3 interpolated, and 4 masked.
 
     Raises
     ------
@@ -435,19 +409,25 @@ def sig2noise_val(
     RuntimeError
         If the underlying C++ validation routine fails.
 
+    Notes
+    -----
+    Supplied grid_data is updated in place. Rejected working u and v become
+    NaN. Masked locations, stored candidates, and peak_ind are unchanged;
+    passing checks preserve existing status flags. NumPy inputs are copied
+    into temporary grid_data, so the input arrays are unchanged.
+
     '''
     data = _resolve_stat_field(sig, field_data, 's2n')
     checked_threshold = _threshold(threshold, 'threshold')
-    flag = cpiv.validate_s2n(data, checked_threshold)
-    return _format_flag(flag, return_raw)
+    cpiv.validate_s2n(data, checked_threshold)
+    return np.array(data.flag, copy=True)
 
 
 def peak2peak_val(
     sig: np.ndarray | cpiv.grid_data | None=None,
     threshold: float | None=None,
     field_data: cpiv.grid_data | None=None,
-    return_raw: bool=False,
-) -> ValidationResult:
+) -> np.ndarray:
     '''Validate vectors using their primary-to-secondary peak ratios.
 
     Flag vectors whose primary-to-secondary correlation-peak ratio is less
@@ -463,14 +443,12 @@ def peak2peak_val(
         Minimum accepted primary-to-secondary peak ratio.
     field_data : cpiv.grid_data or None
         Reusable C++ grid data. It cannot be combined with ``sig``.
-    return_raw : bool
-        If True, return the C++ flag image. Otherwise, return a boolean NumPy
-        copy.
 
     Returns
     -------
-    invalid : np.ndarray or cpiv.image_g_8
-        Flag image with nonzero or True values below the threshold.
+    flags : np.ndarray
+        Independent uint8 copy of the accumulated vector-status flags:
+        0 valid, 1 invalid, 2 substituted, 3 interpolated, and 4 masked.
 
     Raises
     ------
@@ -481,11 +459,18 @@ def peak2peak_val(
     RuntimeError
         If the underlying C++ validation routine fails.
 
+    Notes
+    -----
+    Supplied grid_data is updated in place. Rejected working u and v become
+    NaN. Masked locations, stored candidates, and peak_ind are unchanged;
+    passing checks preserve existing status flags. NumPy inputs are copied
+    into temporary grid_data, so the input arrays are unchanged.
+
     '''
     data = _resolve_stat_field(sig, field_data, 'p2p')
     checked_threshold = _threshold(threshold, 'threshold')
-    flag = cpiv.validate_p2p(data, checked_threshold)
-    return _format_flag(flag, return_raw)
+    cpiv.validate_p2p(data, checked_threshold)
+    return np.array(data.flag, copy=True)
 
 
 def local_difference_val(
@@ -494,8 +479,7 @@ def local_difference_val(
     u_threshold: float | None=None,
     v_threshold: float | None=None,
     field_data: cpiv.grid_data | None=None,
-    return_raw: bool=False,
-) -> ValidationResult:
+) -> np.ndarray:
     '''Validate vectors against differences from neighboring vectors.
 
     Compare each vector with its local 3-by-3 neighborhood and flag vectors
@@ -515,14 +499,12 @@ def local_difference_val(
         Maximum allowed absolute v-component difference.
     field_data : cpiv.grid_data or None
         Reusable C++ vector data. It cannot be combined with u or v arrays.
-    return_raw : bool
-        If True, return the C++ flag image. Otherwise, return a boolean NumPy
-        copy.
 
     Returns
     -------
-    invalid : np.ndarray or cpiv.image_g_8
-        Flag image with nonzero or True values at invalid vectors.
+    flags : np.ndarray
+        Independent uint8 copy of the accumulated vector-status flags:
+        0 valid, 1 invalid, 2 substituted, 3 interpolated, and 4 masked.
 
     Raises
     ------
@@ -534,12 +516,19 @@ def local_difference_val(
     RuntimeError
         If the underlying C++ validation routine fails.
 
+    Notes
+    -----
+    Supplied grid_data is updated in place. Rejected working u and v become
+    NaN. Masked locations, stored candidates, and peak_ind are unchanged;
+    passing checks preserve existing status flags. NumPy inputs are copied
+    into temporary grid_data, so the input arrays are unchanged.
+
     '''
     data = _resolve_vector_field(u, v, field_data)
     threshold_u = _nonnegative_threshold(u_threshold, 'u_threshold')
     threshold_v = _nonnegative_threshold(v_threshold, 'v_threshold')
-    flag = cpiv.validate_difference(data, threshold_u, threshold_v)
-    return _format_flag(flag, return_raw)
+    cpiv.validate_difference(data, threshold_u, threshold_v)
+    return np.array(data.flag, copy=True)
 
 
 def local_median_val(
@@ -548,13 +537,13 @@ def local_median_val(
     u_threshold: float | None=None,
     v_threshold: float | None=None,
     field_data: cpiv.grid_data | None=None,
-    return_raw: bool=False,
-) -> ValidationResult:
+) -> np.ndarray:
     '''Validate vectors against local component medians.
 
     Compute u and v medians over each local 3-by-3 neighborhood and flag a
     vector when either absolute component residual exceeds its threshold.
-    Nonfinite vectors and neighborhoods with insufficient data are flagged.
+    Nonfinite vectors are rejected. Neighborhoods with insufficient eligible
+    data are left unchanged.
 
     Parameters
     ----------
@@ -569,14 +558,12 @@ def local_median_val(
         Maximum allowed absolute residual from the local v median.
     field_data : cpiv.grid_data or None
         Reusable C++ vector data. It cannot be combined with u or v arrays.
-    return_raw : bool
-        If True, return the C++ flag image. Otherwise, return a boolean NumPy
-        copy.
 
     Returns
     -------
-    invalid : np.ndarray or cpiv.image_g_8
-        Flag image with nonzero or True values at invalid vectors.
+    flags : np.ndarray
+        Independent uint8 copy of the accumulated vector-status flags:
+        0 valid, 1 invalid, 2 substituted, 3 interpolated, and 4 masked.
 
     Raises
     ------
@@ -588,12 +575,19 @@ def local_median_val(
     RuntimeError
         If the underlying C++ validation routine fails.
 
+    Notes
+    -----
+    Supplied grid_data is updated in place. Rejected working u and v become
+    NaN. Masked locations, stored candidates, and peak_ind are unchanged;
+    passing checks preserve existing status flags. NumPy inputs are copied
+    into temporary grid_data, so the input arrays are unchanged.
+
     '''
     data = _resolve_vector_field(u, v, field_data)
     threshold_u = _nonnegative_threshold(u_threshold, 'u_threshold')
     threshold_v = _nonnegative_threshold(v_threshold, 'v_threshold')
-    flag = cpiv.validate_median(data, threshold_u, threshold_v)
-    return _format_flag(flag, return_raw)
+    cpiv.validate_median(data, threshold_u, threshold_v)
+    return np.array(data.flag, copy=True)
 
 
 def local_normalized_median_val(
@@ -601,13 +595,13 @@ def local_normalized_median_val(
     v: np.ndarray | None=None,
     threshold: float | None=None,
     field_data: cpiv.grid_data | None=None,
-    return_raw: bool=False,
-) -> ValidationResult:
+) -> np.ndarray:
     '''Validate vectors using the normalized local-median test.
 
     Compute the normalized residual of each vector from the local u and v
     medians and flag vectors whose combined residual exceeds ``threshold``.
-    Nonfinite vectors and neighborhoods with insufficient data are flagged.
+    Nonfinite vectors are rejected. Neighborhoods with insufficient eligible
+    data are left unchanged.
 
     Parameters
     ----------
@@ -620,14 +614,12 @@ def local_normalized_median_val(
         Nonnegative maximum normalized-median residual.
     field_data : cpiv.grid_data or None
         Reusable C++ vector data. It cannot be combined with u or v arrays.
-    return_raw : bool
-        If True, return the C++ flag image. Otherwise, return a boolean NumPy
-        copy.
 
     Returns
     -------
-    invalid : np.ndarray or cpiv.image_g_8
-        Flag image with nonzero or True values at invalid vectors.
+    flags : np.ndarray
+        Independent uint8 copy of the accumulated vector-status flags:
+        0 valid, 1 invalid, 2 substituted, 3 interpolated, and 4 masked.
 
     Raises
     ------
@@ -639,8 +631,15 @@ def local_normalized_median_val(
     RuntimeError
         If the underlying C++ validation routine fails.
 
+    Notes
+    -----
+    Supplied grid_data is updated in place. Rejected working u and v become
+    NaN. Masked locations, stored candidates, and peak_ind are unchanged;
+    passing checks preserve existing status flags. NumPy inputs are copied
+    into temporary grid_data, so the input arrays are unchanged.
+
     '''
     data = _resolve_vector_field(u, v, field_data)
     checked_threshold = _nonnegative_threshold(threshold, 'threshold')
-    flag = cpiv.validate_normalized_median(data, checked_threshold)
-    return _format_flag(flag, return_raw)
+    cpiv.validate_normalized_median(data, checked_threshold)
+    return np.array(data.flag, copy=True)
