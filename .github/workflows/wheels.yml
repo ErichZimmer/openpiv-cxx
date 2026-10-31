@@ -32,7 +32,7 @@ jobs:
         with:
           submodules: true
           
-      - name: Set up 32-bit MinGW
+      - name: Set up 32-bit MinGW for Win32 build
         if: ${{ runner.os == 'Windows' && matrix.buildplat[1] == 'win32' }}
         uses: egor-tensin/setup-mingw@41b837e47d7f85214629d255b9c4bc3fcbe9fd63 # v3
         with:
@@ -70,10 +70,12 @@ jobs:
           chmod +x "$tool_dir/install_name_tool"
           echo "$tool_dir" >> "$GITHUB_PATH"
 
-      - name: Build wheels - Windows ARM64 (MSVC)
+      - name: Build wheels - Windows ARM64 (clang-cl)
         if: ${{ runner.os == 'Windows' && matrix.buildplat[1] == 'win_arm64' }}
         uses: pypa/cibuildwheel@8d2b08b68458a16aeb24b64e68a09ab1c8e82084 # v3.4.1
         env:
+          CC: clang-cl
+          CXX: clang-cl
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
           CIBW_CONFIG_SETTINGS_WINDOWS: "build-dir=build-wheel setup-args=--vsenv"
 
