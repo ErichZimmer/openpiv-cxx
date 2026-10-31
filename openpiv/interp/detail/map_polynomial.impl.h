@@ -104,13 +104,16 @@ namespace openpiv::interp
                     jj = static_cast<size_t>(start_y + j);
 
                     const ContainedT* row = src.line(jj);
+                    double row_sum = 0.0;
 
                     for (int32_t i = 0; i < kernel_full_size; ++i)
                     {
                         ii = static_cast<size_t>(start_x + i);
 
-                        value += static_cast<double>(row[ii]) * wx[static_cast<size_t>(i)] * wy[static_cast<size_t>(j)];
+                        row_sum += static_cast<double>(row[ii]) * wx[static_cast<size_t>(i)];
                     }
+
+                    value += row_sum * wy[static_cast<size_t>(j)];
                 }
 
                 out[{x,y}] = static_cast<ContainedT>(value);
@@ -122,13 +125,16 @@ namespace openpiv::interp
                     jj = static_cast<size_t>(core::mirror_index<int32_t>(start_y + j, static_cast<int32_t>(src_height)));
 
                     const ContainedT* row = src.line(jj);
+                    double row_sum = 0.0;
 
                     for (int32_t i = 0; i < kernel_full_size; ++i)
                     {
                         ii = static_cast<size_t>(core::mirror_index<int32_t>(start_x + i, static_cast<int32_t>(src_width)));
 
-                        value += static_cast<double>(row[ii]) * wx[static_cast<size_t>(i)] * wy[static_cast<size_t>(j)];
+                        row_sum += static_cast<double>(row[ii]) * wx[static_cast<size_t>(i)];
                     }
+
+                    value += row_sum * wy[static_cast<size_t>(j)];
                 }
 
                 out[{x,y}] = static_cast<ContainedT>(value);

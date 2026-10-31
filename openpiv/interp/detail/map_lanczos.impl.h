@@ -122,13 +122,16 @@ namespace openpiv::interp
                     jj = cell_iy - kernel_half_size + j;
 
                     const ContainedT* row = src.line(jj);
+                    double row_sum = 0.0;
 
                     for (int32_t i = 0; i < kernel_full_size; ++i)
                     {
                         ii = cell_ix - kernel_half_size + i;
 
-                        value += static_cast<double>(row[ii]) * wx[i] * wy[j];
+                        row_sum += static_cast<double>(row[ii]) * wx[static_cast<size_t>(i)];
                     }
+
+                    value += row_sum * wy[static_cast<size_t>(j)];
                 }
 
                 out[{x,y}] = static_cast<ContainedT>(value);
@@ -140,13 +143,16 @@ namespace openpiv::interp
                     jj = core::mirror_index<int32_t>(cell_iy - kernel_half_size + j, src_height);
 
                     const ContainedT* row = src.line(jj);
+                    double row_sum = 0.0;
 
                     for (int32_t i = 0; i < kernel_full_size; ++i)
                     {
                         ii = core::mirror_index<int32_t>(cell_ix - kernel_half_size + i, src_width);
 
-                        value += static_cast<double>(row[ii]) * wx[i] * wy[j];
+                        row_sum += static_cast<double>(row[ii]) * wx[static_cast<size_t>(i)];
                     }
+
+                    value += row_sum * wy[static_cast<size_t>(j)];
                 }
 
                 out[{x,y}] = static_cast<ContainedT>(value);
